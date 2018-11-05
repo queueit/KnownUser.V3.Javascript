@@ -79,59 +79,7 @@ router.get('/', function (req, res, next) {
     var customerId = ""; // Your Queue-it customer ID
     var secretKey = ""; // Your 72 char secret key as specified in Go Queue-it self-service platform
 
-    // Initialize httpContextProvider
-    var httpContextProvider = {
-      getHttpRequest: function () {
-        var httpRequest = {
-          getUserAgent: function () {
-            return this.getHeader("user-agent");
-          },
-          getHeader: function (headerName) {
-            var headerValue = req.header(headerName);
-            
-            if(!headerValue)
-              return "";
-
-            return headerValue;
-          },
-          getAbsoluteUri: function () {
-            return req.protocol + '://' + req.get('host') + req.originalUrl;
-          },
-          getUserHostAddress: function () {
-            return req.ip;
-          },
-          getCookieValue: function (cookieKey) {
-            // This requires 'cookie-parser' node module (installed/used from app.js)
-            return req.cookies[cookieKey];
-          }
-        };
-        return httpRequest;
-      },
-      getHttpResponse: function () {
-        var httpResponse = {
-          setCookie: function (cookieName, cookieValue, domain, expiration) {
-            if (domain === "")
-              domain = null;
-
-            // expiration is in secs, but Date needs it in milisecs
-            var expirationDate = new Date(expiration * 1000);
-
-			// This requires 'cookie-parser' node module (installed/used from app.js)
-            res.cookie(
-              cookieName,
-              cookieValue,
-              {
-                expires: expirationDate,
-                path: "/",
-                domain: domain,
-                secure: false,
-                httpOnly: false
-              });
-          }
-        };
-        return httpResponse;
-      }
-    };
+    var httpContextProvider = initializeExpressHttpContentProvider(req, res);
 
     var knownUser = QueueIT.KnownUserV3.SDK.KnownUser;
     var queueitToken = req.query[knownUser.QueueITTokenKey];
@@ -181,6 +129,64 @@ router.get('/', function (req, res, next) {
 module.exports = router;
 ```
 
+Code to initialize a httpContextProvider in Express:
+```
+function initializeExpressHttpContentProvider(req, res) {
+    return {
+        getHttpRequest: function () {
+            var httpRequest = {
+                getUserAgent: function () {
+                    return this.getHeader("user-agent");
+                },
+                getHeader: function (headerName) {
+                    var headerValue = req.header(headerName);
+
+                    if (!headerValue)
+                        return "";
+
+                    return headerValue;
+                },
+                getAbsoluteUri: function () {
+                    return req.protocol + '://' + req.get('host') + req.originalUrl;
+                },
+                getUserHostAddress: function () {
+                    return req.ip;
+                },
+                getCookieValue: function (cookieKey) {
+                    // This requires 'cookie-parser' node module (installed/used from app.js)
+                    return req.cookies[cookieKey];
+                }
+            };
+            return httpRequest;
+        },
+        getHttpResponse: function () {
+            var httpResponse = {
+                setCookie: function (cookieName, cookieValue, domain, expiration) {
+                    if (domain === "")
+                        domain = null;
+
+                    // expiration is in secs, but Date needs it in milisecs
+                    var expirationDate = new Date(expiration * 1000);
+
+                    // This requires 'cookie-parser' node module (installed/used from app.js)
+                    res.cookie(
+                        cookieName,
+                        cookieValue,
+                        {
+                            expires: expirationDate,
+                            path: "/",
+                            domain: domain,
+                            secure: false,
+                            httpOnly: false
+                        });
+                }
+            };
+            return httpResponse;
+        }
+    };
+}
+```
+
 ## Alternative Implementation
 
 ### Queue configuration
@@ -228,59 +234,7 @@ router.get('/', function (req, res, next) {
     // queueConfig.culture = "da-DK" // Optional - Culture of the queue ticket layout in the format specified here: https://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx Default is to use what is specified on Event
     // queueConfig.layoutName = "NameOfYourCustomLayout" // Optional - Name of the queue ticket layout - e.g. "Default layout by Queue-it". Default is to take what is specified on the Event
 
-    // Initialize httpContextProvider
-    var httpContextProvider = {
-      getHttpRequest: function () {
-        var httpRequest = {
-          getUserAgent: function () {
-            return this.getHeader("user-agent");
-          },
-          getHeader: function (headerName) {
-            var headerValue = req.header(headerName);
-            
-            if(!headerValue)
-              return "";
-
-            return headerValue;
-          },
-          getAbsoluteUri: function () {
-            return req.protocol + '://' + req.get('host') + req.originalUrl;
-          },
-          getUserHostAddress: function () {
-            return req.ip;
-          },
-          getCookieValue: function (cookieKey) {
-            // This requires 'cookie-parser' node module (installed/used from app.js)
-            return req.cookies[cookieKey];
-          }
-        };
-        return httpRequest;
-      },
-      getHttpResponse: function () {
-        var httpResponse = {
-          setCookie: function (cookieName, cookieValue, domain, expiration) {
-            if (domain === "")
-              domain = null;
-
-            // expiration is in secs, but Date needs it in milisecs
-            var expirationDate = new Date(expiration * 1000);
-
-			// This requires 'cookie-parser' node module (installed/used from app.js)
-            res.cookie(
-              cookieName,
-              cookieValue,
-              {
-                expires: expirationDate,
-                path: "/",
-                domain: domain,
-                secure: false,
-                httpOnly: false
-              });
-          }
-        };
-        return httpResponse;
-      }
-    };
+    var httpContextProvider = initializeExpressHttpContentProvider(req, res);
 
     var knownUser = QueueIT.KnownUserV3.SDK.KnownUser;
     var queueitToken = req.query[knownUser.QueueITTokenKey];
@@ -372,59 +326,7 @@ router.get('/', function (req, res, next) {
     var customerId = ""; // Your Queue-it customer ID
     var secretKey = ""; // Your 72 char secret key as specified in Go Queue-it self-service platform
 
-    // Initialize httpContextProvider
-    var httpContextProvider = {
-      getHttpRequest: function () {
-        var httpRequest = {
-          getUserAgent: function () {
-            return this.getHeader("user-agent");
-          },
-          getHeader: function (headerName) {
-            var headerValue = req.header(headerName);
-            
-            if(!headerValue)
-              return "";
-
-            return headerValue;
-          },
-          getAbsoluteUri: function () {
-            return req.protocol + '://' + req.get('host') + req.originalUrl;
-          },
-          getUserHostAddress: function () {
-            return req.ip;
-          },
-          getCookieValue: function (cookieKey) {
-            // This requires 'cookie-parser' node module (installed/used from app.js)
-            return req.cookies[cookieKey];
-          }
-        };
-        return httpRequest;
-      },
-      getHttpResponse: function () {
-        var httpResponse = {
-          setCookie: function (cookieName, cookieValue, domain, expiration) {
-            if (domain === "")
-              domain = null;
-
-            // expiration is in secs, but Date needs it in milisecs
-            var expirationDate = new Date(expiration * 1000);
-
-			// This requires 'cookie-parser' node module (installed/used from app.js)
-            res.cookie(
-              cookieName,
-              cookieValue,
-              {
-                expires: expirationDate,
-                path: "/",
-                domain: domain,
-                secure: false,
-                httpOnly: false
-              });
-          }
-        };
-        return httpResponse;
-      }
-    };
+    var httpContextProvider = initializeExpressHttpContentProvider(req, res);
 
     var knownUser = QueueIT.KnownUserV3.SDK.KnownUser;
     var queueitToken = req.query[knownUser.QueueITTokenKey];
