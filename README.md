@@ -52,7 +52,7 @@ The KnownUser validation must be done on *all requests except requests for stati
 So, if you add the KnownUser validation logic to a central place, then be sure that the Triggers only fire on page requests (including ajax requests) and not on e.g. image.
 
 The following is an example route in express/nodejs which shows how to validate that a user has been through the queue.
-It asumes that your integrationconfiguration file is located in root of the web application and the known user sdk file is in a folder called 'sdk'. It also requires node modules: node-import, crypto and cookie-parser.
+It asumes that your integrationconfiguration file is located in root of the web application and the known user sdk file is in a folder called 'sdk'. Please note it uses the node module 'node-import' to import the SDK code.
  
 ```javascript
 var express = require('express');
@@ -62,14 +62,7 @@ var fs = require('fs');
 require('node-import');
 module.exports = imports("./sdk/queueit-knownuserv3-sdk.js");
 
-var utils = QueueIT.KnownUserV3.SDK.Utils;
-utils.generateSHA256Hash = function (secretKey, stringToHash) {
-  const crypto = require('crypto');
-  const hash = crypto.createHmac('sha256', secretKey)
-    .update(stringToHash)
-    .digest('hex');
-  return hash;
-};
+configureKnownUserHashing();
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
@@ -129,7 +122,7 @@ router.get('/', function (req, res, next) {
 module.exports = router;
 ```
 
-Code to initialize a httpContextProvider in Express:
+Code to initialize a httpContextProvider in Express (requires node module 'cookie-parser'):
 ```
 function initializeExpressHttpContentProvider(req, res) {
     return {
@@ -187,6 +180,20 @@ function initializeExpressHttpContentProvider(req, res) {
 }
 ```
 
+Code to configure hashing in KnownUser SDK (requires node module 'crypto'):
+```
+function configureKnownUserHashing() {
+    var utils = QueueIT.KnownUserV3.SDK.Utils;
+    utils.generateSHA256Hash = function (secretKey, stringToHash) {
+      const crypto = require('crypto');
+      const hash = crypto.createHmac('sha256', secretKey)
+        .update(stringToHash)
+        .digest('hex');
+      return hash;
+    };
+}
+```
+
 ## Alternative Implementation
 
 ### Queue configuration
@@ -208,14 +215,7 @@ var fs = require('fs');
 require('node-import');
 module.exports = imports("./sdk/queueit-knownuserv3-sdk.js");
 
-var utils = QueueIT.KnownUserV3.SDK.Utils;
-utils.generateSHA256Hash = function (secretKey, stringToHash) {
-  const crypto = require('crypto');
-  const hash = crypto.createHmac('sha256', secretKey)
-    .update(stringToHash)
-    .digest('hex');
-  return hash;
-};
+configureKnownUserHashing();
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
@@ -309,14 +309,7 @@ var fs = require('fs');
 require('node-import');
 module.exports = imports("./sdk/queueit-knownuserv3-sdk.js");
 
-var utils = QueueIT.KnownUserV3.SDK.Utils;
-utils.generateSHA256Hash = function (secretKey, stringToHash) {
-  const crypto = require('crypto');
-  const hash = crypto.createHmac('sha256', secretKey)
-    .update(stringToHash)
-    .digest('hex');
-  return hash;
-};
+configureKnownUserHashing();
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
