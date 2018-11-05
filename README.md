@@ -133,7 +133,7 @@ router.get('/', function (req, res, next) {
       }
     };
 
-	var knownUser = QueueIT.KnownUserV3.SDK.KnownUser;
+    var knownUser = QueueIT.KnownUserV3.SDK.KnownUser;
     var queueitToken = req.query[knownUser.QueueITTokenKey];
     var requestUrl = httpContextProvider.getHttpRequest().getAbsoluteUri();
     var requestUrlWithoutToken = requestUrl.replace(new RegExp("([\?&])(" + knownUser.QueueITTokenKey + "=[^&]*)", 'i'), "");
@@ -219,14 +219,14 @@ router.get('/', function (req, res, next) {
     var customerId = ""; // Your Queue-it customer ID
     var secretKey = ""; // Your 72 char secret key as specified in Go Queue-it self-service platform
 
-	var queueConfig = new QueueIT.KnownUserV3.SDK.QueueEventConfig();
-	queueConfig.eventId = "" // ID of the queue to use
-	queueConfig.queueDomain = "xxx.queue-it.net" // Domian name of the queue - usually in the format [CustomerId].queue-it.net
-	// queueConfig.cookieDomain = ".my-shop.com" // Optional - Domain name where the Queue-it session cookie should be saved
-	queueConfig.cookieValidityMinute = 15 // Optional - Validity of the Queue-it session cookie. Default is 10 minutes
-	queueConfig.extendCookieValidity = true // Optional - Should the Queue-it session cookie validity time be extended each time the validation runs? Default is true.
-	// queueConfig.culture = "da-DK" // Optional - Culture of the queue ticket layout in the format specified here: https://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx Default is to use what is specified on Event
-	// queueConfig.layoutName = "NameOfYourCustomLayout" // Optional - Name of the queue ticket layout - e.g. "Default layout by Queue-it". Default is to take what is specified on the Event
+    var queueConfig = new QueueIT.KnownUserV3.SDK.QueueEventConfig();
+    queueConfig.eventId = "" // ID of the queue to use
+    queueConfig.queueDomain = "xxx.queue-it.net" // Domian name of the queue - usually in the format [CustomerId].queue-it.net
+    // queueConfig.cookieDomain = ".my-shop.com" // Optional - Domain name where the Queue-it session cookie should be saved
+    queueConfig.cookieValidityMinute = 15 // Optional - Validity of the Queue-it session cookie. Default is 10 minutes
+    queueConfig.extendCookieValidity = true // Optional - Should the Queue-it session cookie validity time be extended each time the validation runs? Default is true.
+    // queueConfig.culture = "da-DK" // Optional - Culture of the queue ticket layout in the format specified here: https://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx Default is to use what is specified on Event
+    // queueConfig.layoutName = "NameOfYourCustomLayout" // Optional - Name of the queue ticket layout - e.g. "Default layout by Queue-it". Default is to take what is specified on the Event
 
     // Initialize httpContextProvider
     var httpContextProvider = {
@@ -282,7 +282,7 @@ router.get('/', function (req, res, next) {
       }
     };
 
-	var knownUser = QueueIT.KnownUserV3.SDK.KnownUser;
+    var knownUser = QueueIT.KnownUserV3.SDK.KnownUser;
     var queueitToken = req.query[knownUser.QueueITTokenKey];
     var requestUrl = httpContextProvider.getHttpRequest().getAbsoluteUri();
     var requestUrlWithoutToken = requestUrl.replace(new RegExp("([\?&])(" + knownUser.QueueITTokenKey + "=[^&]*)", 'i'), "");
@@ -426,7 +426,7 @@ router.get('/', function (req, res, next) {
       }
     };
 
-	var knownUser = QueueIT.KnownUserV3.SDK.KnownUser;
+    var knownUser = QueueIT.KnownUserV3.SDK.KnownUser;
     var queueitToken = req.query[knownUser.QueueITTokenKey];
     var requestUrl = httpContextProvider.getHttpRequest().getAbsoluteUri();
     var requestUrlWithoutToken = requestUrl.replace(new RegExp("([\?&])(" + knownUser.QueueITTokenKey + "=[^&]*)", 'i'), "");
