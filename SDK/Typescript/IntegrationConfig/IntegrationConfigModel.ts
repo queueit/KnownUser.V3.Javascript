@@ -52,6 +52,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
         public static readonly CookieValidator = "CookieValidator";
         public static readonly UserAgentValidator = "UserAgentValidator";
         public static readonly HttpHeaderValidator = "HttpHeaderValidator";
+        public static readonly RequestBodyValidator = "RequestBodyValidator";
     }
 
     export class UrlPartType {

@@ -5,6 +5,7 @@ namespace QueueIT.KnownUserV3.SDK {
         getAbsoluteUri(): string;
         getUserHostAddress(): string;
         getCookieValue(cookieKey: string): string;
+        getRequestBodyAsString(): string;
     }
 
     export interface IHttpResponse {

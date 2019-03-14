@@ -437,7 +437,7 @@ var QueueIT;
             var UserInQueueService = /** @class */ (function () {
                 function UserInQueueService(userInQueueStateRepository) {
                     this.userInQueueStateRepository = userInQueueStateRepository;
-                    this.SDK_VERSION = "3.5.1";
+                    this.SDK_VERSION = "3.5.2";
                 }
                 UserInQueueService.prototype.getQueueITTokenValidationResult = function (targetUrl, eventId, config, queueParams, customerId, secretKey) {
                     var calculatedHash = SDK.Utils.generateSHA256Hash(secretKey, queueParams.queueITTokenWithoutHash);
@@ -704,6 +704,8 @@ var QueueIT;
                                 return UserAgentValidatorHelper.evaluate(triggerPart, request.getUserAgent());
                             case IntegrationConfig.ValidatorType.HttpHeaderValidator:
                                 return HttpHeaderValidatorHelper.evaluate(triggerPart, request.getHeader(triggerPart.HttpHeaderName));
+                            case IntegrationConfig.ValidatorType.RequestBodyValidator:
+                                return RequestBodyValidatorHelper.evaluate(triggerPart, request.getRequestBodyAsString());
                             default:
                                 return false;
                         }
@@ -766,6 +768,14 @@ var QueueIT;
                         return ComparisonOperatorHelper.evaluate(triggerPart.Operator, triggerPart.IsNegative, triggerPart.IsIgnoreCase, userAgent, triggerPart.ValueToCompare, triggerPart.ValuesToCompare);
                     };
                     return UserAgentValidatorHelper;
+                }());
+                var RequestBodyValidatorHelper = /** @class */ (function () {
+                    function RequestBodyValidatorHelper() {
+                    }
+                    RequestBodyValidatorHelper.evaluate = function (triggerPart, bodyString) {
+                        return ComparisonOperatorHelper.evaluate(triggerPart.Operator, triggerPart.IsNegative, triggerPart.IsIgnoreCase, bodyString, triggerPart.ValueToCompare, triggerPart.ValuesToCompare);
+                    };
+                    return RequestBodyValidatorHelper;
                 }());
                 var HttpHeaderValidatorHelper = /** @class */ (function () {
                     function HttpHeaderValidatorHelper() {
@@ -884,6 +894,7 @@ var QueueIT;
                     ValidatorType.CookieValidator = "CookieValidator";
                     ValidatorType.UserAgentValidator = "UserAgentValidator";
                     ValidatorType.HttpHeaderValidator = "HttpHeaderValidator";
+                    ValidatorType.RequestBodyValidator = "RequestBodyValidator";
                     return ValidatorType;
                 }());
                 IntegrationConfig.ValidatorType = ValidatorType;

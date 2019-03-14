@@ -1,6 +1,6 @@
 namespace QueueIT.KnownUserV3.SDK {
     export class UserInQueueService {
-        readonly SDK_VERSION = "3.5.1";
+        readonly SDK_VERSION = "3.5.2";
 
         constructor(private userInQueueStateRepository: UserInQueueStateCookieRepository) {
         }
@@ -182,7 +182,7 @@ namespace QueueIT.KnownUserV3.SDK {
             eventId: string,
             cookieValidityMinutes: number,
             cookieDomain: string,
-            secretKey: string) {
+            secretKey: string) : void {
             this.userInQueueStateRepository.reissueQueueCookie(eventId, cookieValidityMinutes, cookieDomain, secretKey)
         }
 

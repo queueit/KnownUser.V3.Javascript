@@ -51,6 +51,8 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
                     return UserAgentValidatorHelper.evaluate(triggerPart, request.getUserAgent());
                 case ValidatorType.HttpHeaderValidator:
                     return HttpHeaderValidatorHelper.evaluate(triggerPart, request.getHeader(triggerPart.HttpHeaderName));
+                case ValidatorType.RequestBodyValidator:
+                    return RequestBodyValidatorHelper.evaluate(triggerPart, request.getRequestBodyAsString());
                 default:
                     return false;
             }
@@ -126,6 +128,18 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
                 triggerPart.IsNegative,
                 triggerPart.IsIgnoreCase,
                 userAgent,
+                triggerPart.ValueToCompare,
+                triggerPart.ValuesToCompare);
+        }
+    }
+
+    class RequestBodyValidatorHelper {
+        public static evaluate(triggerPart: TriggerPart, bodyString: string): boolean {
+
+            return ComparisonOperatorHelper.evaluate(triggerPart.Operator,
+                triggerPart.IsNegative,
+                triggerPart.IsIgnoreCase,
+                bodyString,
                 triggerPart.ValueToCompare,
                 triggerPart.ValuesToCompare);
         }
