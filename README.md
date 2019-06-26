@@ -226,7 +226,7 @@ router.get('/', function (req, res, next) {
 
     var queueConfig = new QueueIT.KnownUserV3.SDK.QueueEventConfig();
     queueConfig.eventId = "" // ID of the queue to use
-    queueConfig.queueDomain = "xxx.queue-it.net" // Domian name of the queue - usually in the format [CustomerId].queue-it.net
+    queueConfig.queueDomain = "xxx.queue-it.net" // Domain name of the queue - usually in the format [CustomerId].queue-it.net
     // queueConfig.cookieDomain = ".my-shop.com" // Optional - Domain name where the Queue-it session cookie should be saved
     queueConfig.cookieValidityMinute = 15 // Optional - Validity of the Queue-it session cookie. Default is 10 minutes
     queueConfig.extendCookieValidity = true // Optional - Should the Queue-it session cookie validity time be extended each time the validation runs? Default is true.
