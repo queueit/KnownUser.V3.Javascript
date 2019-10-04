@@ -111,9 +111,9 @@ router.get('/', function (req, res, next) {
     }
   }
   catch (e) {
-    // There was an error validationg the request
-    // Use your own logging framework to log the Exception
-    // This was a configuration exception, so we let the user continue
+    // There was an error validating the request
+    // Use your own logging framework to log the error
+    // This was a configuration error, so we let the user continue
     console.log("ERROR:" + e);
   }
 });
@@ -273,9 +273,9 @@ router.get('/', function (req, res, next) {
     }
   }
   catch (e) {
-    // There was an error validationg the request
-    // Use your own logging framework to log the Exception
-    // This was a configuration exception, so we let the user continue
+    // There was an error validating the request
+    // Use your own logging framework to log the error
+    // This was a configuration error, so we let the user continue
     console.log("ERROR:" + e);
   }
 });
@@ -370,9 +370,9 @@ router.get('/', function (req, res, next) {
     }
   }
   catch (e) {
-    // There was an error validationg the request
-    // Use your own logging framework to log the Exception
-    // This was a configuration exception, so we let the user continue
+    // There was an error validating the request
+    // Use your own logging framework to log the error
+    // This was a configuration error, so we let the user continue
     console.log("ERROR:" + e);
   }
 });
