@@ -39,17 +39,6 @@ namespace QueueIT.KnownUserV3.SDK {
             debugEntries["RequestHttpHeader_XForwardedProto"] = httpContextProvider.getHttpRequest().getHeader("X-Forwarded-Proto");
         }
 
-        private static getIsDebug(
-            queueitToken: string,
-            secretKey: string): boolean {
-            var qParams = QueueParameterHelper.extractQueueParams(queueitToken);
-
-            if (qParams && qParams.redirectType && qParams.redirectType.toLowerCase() === "debug")
-                return Utils.generateSHA256Hash(secretKey, qParams.queueITTokenWithoutHash) === qParams.hashCode;
-
-            return false;
-        }
-
         private static setDebugCookie(
             debugEntries,
             httpContextProvider: IHttpContextProvider) {
@@ -79,9 +68,13 @@ namespace QueueIT.KnownUserV3.SDK {
             customerId: string,
             secretKey: string,
             httpContextProvider: IHttpContextProvider,
-            debugEntries): RequestValidationResult {
-            var isDebug = this.getIsDebug(queueitToken, secretKey);
-            if (isDebug) {
+            debugEntries,
+            isDebug: boolean): RequestValidationResult {
+           
+
+            if (isDebug)
+            {
+                debugEntries["SdkVersion"] = UserInQueueService.SDK_VERSION;
                 debugEntries["TargetUrl"] = targetUrl;
                 debugEntries["QueueitToken"] = queueitToken;
                 debugEntries["OriginalUrl"] = httpContextProvider.getHttpRequest().getAbsoluteUri();
@@ -117,11 +110,14 @@ namespace QueueIT.KnownUserV3.SDK {
             customerId: string,
             secretKey: string,
             httpContextProvider: IHttpContextProvider,
-            debugEntries): RequestValidationResult {
+            debugEntries,
+            isDebug: boolean): RequestValidationResult {
 
             targetUrl = this.generateTargetUrl(targetUrl, httpContextProvider);
-            var isDebug = this.getIsDebug(queueitToken, secretKey);
-            if (isDebug) {
+           
+            if (isDebug)
+            {
+                debugEntries["SdkVersion"] = UserInQueueService.SDK_VERSION;
                 debugEntries["TargetUrl"] = targetUrl;
                 debugEntries["QueueitToken"] = queueitToken;
                 debugEntries["CancelConfig"] = cancelConfig !== null ? cancelConfig.getString() : "NULL";
@@ -156,7 +152,8 @@ namespace QueueIT.KnownUserV3.SDK {
             secretKey: string,
             matchedConfig: IntegrationConfig.IntegrationConfigModel,
             httpContextProvider: IHttpContextProvider,
-            debugEntries): RequestValidationResult {
+            debugEntries,
+            isDebug: boolean): RequestValidationResult {
             var targetUrl = "";
             switch (matchedConfig.RedirectLogic) {
                 case "ForcedTargetUrl":
@@ -170,12 +167,19 @@ namespace QueueIT.KnownUserV3.SDK {
                     break;
             }
 
-            var queueEventConfig = new QueueEventConfig(matchedConfig.EventId,
-                matchedConfig.LayoutName, matchedConfig.Culture, matchedConfig.QueueDomain,
+            var queueEventConfig = new QueueEventConfig(
+                matchedConfig.EventId,
+                matchedConfig.LayoutName,
+                matchedConfig.Culture,
+                matchedConfig.QueueDomain,
                 matchedConfig.ExtendCookieValidity,
-                matchedConfig.CookieValidityMinute, matchedConfig.CookieDomain, customerIntegrationInfo.Version);
+                matchedConfig.CookieValidityMinute,
+                matchedConfig.CookieDomain,
+                customerIntegrationInfo.Version,
+                matchedConfig.Name
+            );
 
-            return this._resolveQueueRequestByLocalConfig(targetUrl, queueitToken, queueEventConfig, customerId, secretKey, httpContextProvider, debugEntries);
+            return this._resolveQueueRequestByLocalConfig(targetUrl, queueitToken, queueEventConfig, customerId, secretKey, httpContextProvider, debugEntries, isDebug);
         }
 
         private static handleCancelAction(
@@ -184,13 +188,27 @@ namespace QueueIT.KnownUserV3.SDK {
             secretKey: string,
             matchedConfig: IntegrationConfig.IntegrationConfigModel,
             httpContextProvider: IHttpContextProvider,
-            debugEntries): RequestValidationResult {
-
-            var cancelEventConfig = new CancelEventConfig(matchedConfig.EventId,
-                matchedConfig.QueueDomain, matchedConfig.CookieDomain, customerIntegrationInfo.Version);
+            debugEntries,
+            isDebug: boolean): RequestValidationResult {
+            var cancelEventConfig = new CancelEventConfig(
+                matchedConfig.EventId,
+                matchedConfig.QueueDomain,
+                matchedConfig.CookieDomain,
+                customerIntegrationInfo.Version,
+                matchedConfig.Name
+            );
 
             var targetUrl = this.generateTargetUrl(currentUrlWithoutQueueITToken, httpContextProvider);
-            return this._cancelRequestByLocalConfig(targetUrl, queueitToken, cancelEventConfig, customerId, secretKey, httpContextProvider, debugEntries);
+            return this._cancelRequestByLocalConfig(targetUrl, queueitToken, cancelEventConfig, customerId, secretKey, httpContextProvider, debugEntries, isDebug);
+        }
+
+        private static handleIgnoreAction(
+            httpContextProvider: IHttpContextProvider,
+            actionName: string) {
+            var userInQueueService = this.getUserInQueueService(httpContextProvider);
+            var result = userInQueueService.getIgnoreResult(actionName);
+            result.isAjaxResult = this.isQueueAjaxCall(httpContextProvider);
+            return result;
         }
 
         public static extendQueueCookie(
@@ -217,11 +235,21 @@ namespace QueueIT.KnownUserV3.SDK {
             customerId: string,
             secretKey: string,
             httpContextProvider: IHttpContextProvider): RequestValidationResult {
-            var debugEntries = {};
 
+            var debugEntries = {};
+            var connectorDiagnostics = ConnectorDiagnostics.verify(customerId, secretKey, queueitToken);
+
+            if (connectorDiagnostics.hasError)
+                return connectorDiagnostics.validationResult;
             try {
+
                 targetUrl = this.generateTargetUrl(targetUrl, httpContextProvider);
-                return this._resolveQueueRequestByLocalConfig(targetUrl, queueitToken, queueConfig, customerId, secretKey, httpContextProvider, debugEntries);
+                return this._resolveQueueRequestByLocalConfig(targetUrl, queueitToken, queueConfig, customerId, secretKey, httpContextProvider, debugEntries, connectorDiagnostics.isEnabled);
+            }
+            catch (e) {
+                if (connectorDiagnostics.isEnabled)
+                    debugEntries["Exception"] = e.message;
+                throw e;
             }
             finally {
                 this.setDebugCookie(debugEntries, httpContextProvider);
@@ -235,26 +263,34 @@ namespace QueueIT.KnownUserV3.SDK {
             customerId: string,
             secretKey: string,
             httpContextProvider: IHttpContextProvider): RequestValidationResult {
-            if (!currentUrlWithoutQueueITToken)
-                throw new KnownUserException("currentUrlWithoutQueueITToken can not be null or empty.");
-            if (!integrationsConfigString)
-                throw new KnownUserException("integrationsConfigString can not be null or empty.");
+           
 
             var debugEntries = {};
+            var customerIntegrationInfo: QueueIT.KnownUserV3.SDK.IntegrationConfig.CustomerIntegration;
+
+            var connectorDiagnostics = ConnectorDiagnostics.verify(customerId, secretKey, queueitToken);
+            if (connectorDiagnostics.hasError)
+                return connectorDiagnostics.validationResult;
 
             try {
-                var customerIntegrationInfo: QueueIT.KnownUserV3.SDK.IntegrationConfig.CustomerIntegration =
-                    JSON.parse(integrationsConfigString);
-
-                var isDebug = this.getIsDebug(queueitToken, secretKey);
-                if (isDebug) {
-                    debugEntries["ConfigVersion"] = customerIntegrationInfo.Version.toString();
+                if (connectorDiagnostics.isEnabled)
+                {
+                    debugEntries["SdkVersion"] = UserInQueueService.SDK_VERSION;
                     debugEntries["PureUrl"] = currentUrlWithoutQueueITToken;
                     debugEntries["QueueitToken"] = queueitToken;
                     debugEntries["OriginalUrl"] = httpContextProvider.getHttpRequest().getAbsoluteUri();
 
                     this.logExtraRequestDetails(debugEntries, httpContextProvider);
                 }
+
+                customerIntegrationInfo = JSON.parse(integrationsConfigString);
+                if (connectorDiagnostics.isEnabled) {
+                    debugEntries["ConfigVersion"] = customerIntegrationInfo && customerIntegrationInfo.Version ? customerIntegrationInfo.Version.toString() : "NULL";
+                }
+                if (!currentUrlWithoutQueueITToken)
+                    throw new KnownUserException("currentUrlWithoutQueueITToken can not be null or empty.");
+                if (!customerIntegrationInfo || !customerIntegrationInfo.Version)
+                    throw new KnownUserException("integrationsConfigString can not be null or empty.");
 
                 var configEvaluater = new IntegrationConfig.IntegrationEvaluator();
 
@@ -263,26 +299,30 @@ namespace QueueIT.KnownUserV3.SDK {
                     currentUrlWithoutQueueITToken,
                     httpContextProvider.getHttpRequest());
 
-                if (isDebug) {
+                if (connectorDiagnostics.isEnabled) {
                     debugEntries["MatchedConfig"] = matchedConfig ? matchedConfig.Name : "NULL";
                 }
                 if (!matchedConfig)
-                    return new RequestValidationResult(null, null, null, null, null);
+                    return new RequestValidationResult(null, null, null, null, null, null);
 
                 switch (matchedConfig.ActionType) {
                     case ActionTypes.QueueAction: {
-                        return this.handleQueueAction(currentUrlWithoutQueueITToken, queueitToken, customerIntegrationInfo, customerId, secretKey, matchedConfig, httpContextProvider, debugEntries);
+                        return this.handleQueueAction(currentUrlWithoutQueueITToken, queueitToken, customerIntegrationInfo,
+                            customerId, secretKey, matchedConfig, httpContextProvider, debugEntries, connectorDiagnostics.isEnabled);
                     }
                     case ActionTypes.CancelAction: {
-                        return this.handleCancelAction(currentUrlWithoutQueueITToken, queueitToken, customerIntegrationInfo, customerId, secretKey, matchedConfig, httpContextProvider, debugEntries);
+                        return this.handleCancelAction(currentUrlWithoutQueueITToken, queueitToken, customerIntegrationInfo,
+                                        customerId, secretKey, matchedConfig, httpContextProvider, debugEntries, connectorDiagnostics.isEnabled);
                     }
                     default: {
-                        var userInQueueService = this.getUserInQueueService(httpContextProvider);
-                        var result = userInQueueService.getIgnoreActionResult();
-                        result.isAjaxResult = this.isQueueAjaxCall(httpContextProvider);
-                        return result;
+                        return this.handleIgnoreAction(httpContextProvider, matchedConfig.Name);
                     }
                 }
+            }
+            catch (e) {
+                if (connectorDiagnostics.isEnabled)
+                    debugEntries["Exception"] = e.message;
+                throw e;
             }
             finally {
                 this.setDebugCookie(debugEntries, httpContextProvider);
@@ -296,10 +336,21 @@ namespace QueueIT.KnownUserV3.SDK {
             customerId: string,
             secretKey: string,
             httpContextProvider: IHttpContextProvider): RequestValidationResult {
+
             var debugEntries = {};
+            var connectorDiagnostics = ConnectorDiagnostics.verify(customerId, secretKey, queueitToken);
+
+            if (connectorDiagnostics.hasError)
+                return connectorDiagnostics.validationResult;
+
             try {
                 return this._cancelRequestByLocalConfig(
-                    targetUrl, queueitToken, cancelConfig, customerId, secretKey, httpContextProvider, debugEntries)
+                    targetUrl, queueitToken, cancelConfig, customerId, secretKey, httpContextProvider, debugEntries, connectorDiagnostics.isEnabled)
+            }
+            catch (e) {
+                if (connectorDiagnostics.isEnabled)
+                    debugEntries["Exception"] = e.message;
+                throw e;
             }
             finally {
                 this.setDebugCookie(debugEntries, httpContextProvider);

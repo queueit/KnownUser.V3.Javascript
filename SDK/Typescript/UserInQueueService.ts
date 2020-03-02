@@ -1,27 +1,26 @@
 namespace QueueIT.KnownUserV3.SDK {
     export class UserInQueueService {
-        readonly SDK_VERSION = "3.5.2";
+        static readonly SDK_VERSION = "v3-javascript-" + "3.6.0";
 
         constructor(private userInQueueStateRepository: UserInQueueStateCookieRepository) {
         }
 
         private getQueueITTokenValidationResult(
             targetUrl: string,
-            eventId: string,
             config: QueueEventConfig,
             queueParams: QueueUrlParams,
             customerId: string,
-            secretKey: string): RequestValidationResult {
-
+            secretKey: string)
+            : RequestValidationResult {
             const calculatedHash = Utils.generateSHA256Hash(secretKey, queueParams.queueITTokenWithoutHash);
             if (calculatedHash !== queueParams.hashCode)
-                return this.getVaidationErrorResult(customerId, targetUrl, config, queueParams, "hash");
+                return this.cancelQueueCookieReturnErrorResult(customerId, targetUrl, config, queueParams, "hash");
 
-            if (queueParams.eventId !== eventId)
-                return this.getVaidationErrorResult(customerId, targetUrl, config, queueParams, "eventid");
+            if (queueParams.eventId !== config.eventId)
+                return this.cancelQueueCookieReturnErrorResult(customerId, targetUrl, config, queueParams, "eventid");
 
             if (queueParams.timeStamp < Utils.getCurrentTime())
-                return this.getVaidationErrorResult(customerId, targetUrl, config, queueParams, "timestamp");
+                return this.cancelQueueCookieReturnErrorResult(customerId, targetUrl, config, queueParams, "timestamp");
 
             this.userInQueueStateRepository.store(
                 config.eventId,
@@ -36,49 +35,59 @@ namespace QueueIT.KnownUserV3.SDK {
                 config.eventId,
                 queueParams.queueId,
                 null,
-                queueParams.redirectType);
+                queueParams.redirectType,
+                config.actionName,
+            );
         }
 
-        private getVaidationErrorResult(
+        private cancelQueueCookieReturnErrorResult(
             customerId: string,
             targetUrl: string,
             config: QueueEventConfig,
             qParams: QueueUrlParams,
-            errorCode: string): RequestValidationResult {
+            errorCode: string)
+            : RequestValidationResult {
+            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain);
 
-            let query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName) +
-                `&queueittoken=${qParams.queueITToken}&ts=${Utils.getCurrentTime()}` +
+            let query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName) +
+                `&queueittoken=${qParams.queueITToken}` +
+                `&ts=${Utils.getCurrentTime()}` +
                 (targetUrl ? `&t=${Utils.encodeUrl(targetUrl)}` : "");
 
-            var domainAlias = config.queueDomain;
-            if (!Utils.endsWith(domainAlias, "/"))
-                domainAlias = domainAlias + "/";
+            var uriPath = `error/${errorCode}/`;
 
-            var redirectUrl = `https://${domainAlias}error/${errorCode}/?${query}`;
+            var redirectUrl = this.generateRedirectUrl(config.queueDomain, uriPath, query);
 
             return new RequestValidationResult(
                 ActionTypes.QueueAction,
                 config.eventId,
                 null,
                 redirectUrl,
-                null);
+                null,
+                config.actionName
+            );
         }
 
-        private getInQueueRedirectResult(
+        private cancelQueueCookieReturnQueueResult(
             targetUrl: string,
             config: QueueEventConfig,
-            customerId: string): RequestValidationResult {
+            customerId: string)
+            : RequestValidationResult {
+            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain);
 
-            var redirectUrl = "https://" + config.queueDomain + "/?" +
-                this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName) +
+            let query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName) +
                 (targetUrl ? "&t=" + Utils.encodeUrl(targetUrl) : "");
+
+            var redirectUrl = this.generateRedirectUrl(config.queueDomain, "", query);
 
             return new RequestValidationResult(
                 ActionTypes.QueueAction,
                 config.eventId,
                 null,
                 redirectUrl,
-                null);
+                null,
+                config.actionName
+            );
         }
 
         private getQueryString(
@@ -86,13 +95,15 @@ namespace QueueIT.KnownUserV3.SDK {
             eventId: string,
             configVersion: number,
             culture: string | null,
-            layoutName: string | null): string {
-
+            layoutName: string | null,
+            actionName: string | null)
+            : string {
             const queryStringList = new Array<string>();
             queryStringList.push(`c=${Utils.encodeUrl(customerId)}`);
             queryStringList.push(`e=${Utils.encodeUrl(eventId)}`);
-            queryStringList.push(`ver=v3-javascript-${this.SDK_VERSION}`);
+            queryStringList.push(`ver=${UserInQueueService.SDK_VERSION}`);
             queryStringList.push(`cver=${configVersion}`);
+            queryStringList.push(`man=${Utils.encodeUrl(actionName)}`)
 
             if (culture)
                 queryStringList.push("cid=" + Utils.encodeUrl(culture));
@@ -101,6 +112,14 @@ namespace QueueIT.KnownUserV3.SDK {
                 queryStringList.push("l=" + Utils.encodeUrl(layoutName));
 
             return queryStringList.join("&");
+        }
+
+        private generateRedirectUrl(queueDomain: string, uriPath: string, query: string) {
+            if (!Utils.endsWith(queueDomain, "/"))
+                queueDomain = queueDomain + "/";
+
+            var redirectUrl = `https://${queueDomain}${uriPath}?${query}`;
+            return redirectUrl;
         }
 
         public validateQueueRequest(
@@ -121,22 +140,22 @@ namespace QueueIT.KnownUserV3.SDK {
                         state.redirectType,
                         secretKey);
                 }
-                return new RequestValidationResult(ActionTypes.QueueAction,
+                return new RequestValidationResult(
+                    ActionTypes.QueueAction,
                     config.eventId,
                     state.queueId,
                     null,
-                    state.redirectType
+                    state.redirectType,
+                    config.actionName
                 );
             }
-
             const queueParmas = QueueParameterHelper.extractQueueParams(queueitToken);
 
             if (queueParmas !== null) {
-                return this.getQueueITTokenValidationResult(targetUrl, config.eventId,
-                    config, queueParmas, customerId, secretKey);
+                return this.getQueueITTokenValidationResult(targetUrl, config, queueParmas, customerId, secretKey);
             }
             else {
-                return this.getInQueueRedirectResult(targetUrl, config, customerId);
+                return this.cancelQueueCookieReturnQueueResult(targetUrl, config, customerId);
             }
         }
 
@@ -145,28 +164,26 @@ namespace QueueIT.KnownUserV3.SDK {
             config: CancelEventConfig,
             customerId: string,
             secretKey: string): RequestValidationResult {
-
             //we do not care how long cookie is valid while canceling cookie
             var state = this.userInQueueStateRepository.getState(config.eventId, -1, secretKey, false);
 
             if (state.isValid) {
                 this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain);
 
-                var query = this.getQueryString(customerId, config.eventId, config.version, null, null) +
+                var query = this.getQueryString(customerId, config.eventId, config.version, null, null, config.actionName) +
                     (targetUrl ? "&r=" + Utils.encodeUrl(targetUrl) : "");
 
-                var domainAlias = config.queueDomain;
-                if (!Utils.endsWith(domainAlias, "/"))
-                    domainAlias = domainAlias + "/";
+                var uriPath = `cancel/${customerId}/${config.eventId}/`;
 
-                var redirectUrl = "https://" + domainAlias + "cancel/" + customerId + "/" + config.eventId + "/?" + query;
+                var redirectUrl = this.generateRedirectUrl(config.queueDomain, uriPath, query);
 
                 return new RequestValidationResult(
                     ActionTypes.CancelAction,
                     config.eventId,
                     state.queueId,
                     redirectUrl,
-                    state.redirectType);
+                    state.redirectType,
+                    config.actionName);
             }
             else {
                 return new RequestValidationResult(
@@ -174,7 +191,8 @@ namespace QueueIT.KnownUserV3.SDK {
                     config.eventId,
                     null,
                     null,
-                    null);
+                    null,
+                    config.actionName);
             }
         }
 
@@ -182,12 +200,13 @@ namespace QueueIT.KnownUserV3.SDK {
             eventId: string,
             cookieValidityMinutes: number,
             cookieDomain: string,
-            secretKey: string) : void {
+            secretKey: string) {
             this.userInQueueStateRepository.reissueQueueCookie(eventId, cookieValidityMinutes, cookieDomain, secretKey)
         }
 
-        public getIgnoreActionResult(): RequestValidationResult {
-            return new RequestValidationResult(ActionTypes.IgnoreAction, null, null, null, null);
+        public getIgnoreResult(
+            actionName: string): RequestValidationResult {
+            return new RequestValidationResult(ActionTypes.IgnoreAction, null, null, null, null, actionName);
         }
     }
 }

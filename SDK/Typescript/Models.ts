@@ -8,10 +8,11 @@ namespace QueueIT.KnownUserV3.SDK {
             public extendCookieValidity: boolean,
             public cookieValidityMinute: number,
             public cookieDomain: string,
-            public version: number) { }
+            public version: number,
+            public actionName: string = 'unspecified') { }
 
         getString() {
-            return `EventId:${this.eventId}&Version:${this.version}&QueueDomain:${this.queueDomain}` +
+            return `EventId:${this.eventId}&Version:${this.version}&ActionName:${this.actionName}&QueueDomain:${this.queueDomain}` +
                 `&CookieDomain:${this.cookieDomain}&ExtendCookieValidity:${this.extendCookieValidity}` +
                 `&CookieValidityMinute:${this.cookieValidityMinute}&LayoutName:${this.layoutName}&Culture:${this.culture}`;
         }
@@ -21,10 +22,12 @@ namespace QueueIT.KnownUserV3.SDK {
         constructor(public eventId: string,
             public queueDomain: string,
             public cookieDomain: string,
-            public version: number) { }
+            public version: number,
+            public actionName: string = 'unspecified') { }
+
         getString() {
             return `EventId:${this.eventId}&Version:${this.version}` +
-                `&QueueDomain:${this.queueDomain}&CookieDomain:${this.cookieDomain}`;
+                `&QueueDomain:${this.queueDomain}&CookieDomain:${this.cookieDomain}&ActionName:${this.actionName}`;
         }
     }
 
@@ -34,7 +37,9 @@ namespace QueueIT.KnownUserV3.SDK {
             public eventId: string,
             public queueId: string,
             public redirectUrl: string,
-            public redirectType: string) {
+            public redirectType: string,
+            public actionName: string
+        ) {
         }
 
         public isAjaxResult: boolean;

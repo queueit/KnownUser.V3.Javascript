@@ -59,7 +59,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
         }
     }
 
-    class UrlValidatorHelper {
+    export class UrlValidatorHelper {
         public static evaluate(triggerPart: TriggerPart, url: string): boolean {
             return ComparisonOperatorHelper.evaluate(
                 triggerPart.Operator,
@@ -84,7 +84,6 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
         }
 
         public static getHostNameFromUrl(url: string): string {
-
             let urlMatcher = /^(([^:/\?#]+):)?(\/\/([^/\?#]*))?([^\?#]*)(\?([^#]*))?(#(.*))?/;
             let match = urlMatcher.exec(url);
             if (match && match[4])
@@ -101,7 +100,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
         }
     }
 
-    class CookieValidatorHelper {
+    export class CookieValidatorHelper {
         public static evaluate(triggerPart: TriggerPart, request: IHttpRequest): boolean {
             return ComparisonOperatorHelper.evaluate(triggerPart.Operator,
                 triggerPart.IsNegative,
@@ -121,7 +120,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
         }
     }
 
-    class UserAgentValidatorHelper {
+    export class UserAgentValidatorHelper {
         public static evaluate(triggerPart: TriggerPart, userAgent: string): boolean {
 
             return ComparisonOperatorHelper.evaluate(triggerPart.Operator,
@@ -133,7 +132,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
         }
     }
 
-    class RequestBodyValidatorHelper {
+    export class RequestBodyValidatorHelper {
         public static evaluate(triggerPart: TriggerPart, bodyString: string): boolean {
 
             return ComparisonOperatorHelper.evaluate(triggerPart.Operator,
@@ -156,7 +155,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
         }
     }
 
-    class ComparisonOperatorHelper {
+    export class ComparisonOperatorHelper {
         public static evaluate(opt: string, isNegative: boolean, isIgnoreCase: boolean, value: string,
             valueToCompare: string, valuesToCompare: Array<string>): boolean {
 
@@ -179,7 +178,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
         }
 
         private static contains(value: string, valueToCompare: string, isNegative: boolean, ignoreCase: boolean): boolean {
-            if (valueToCompare === "*")
+            if (valueToCompare === "*" && value)
                 return true;
 
             var evaluation = false;

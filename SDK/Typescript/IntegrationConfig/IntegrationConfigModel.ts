@@ -19,7 +19,6 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
             this.Integrations = new Array<IntegrationConfigModel>();
             this.Version = -1;
         }
-        //sorted list of integrations
         Integrations: Array<IntegrationConfigModel>;
         Version: number;
     }
@@ -31,12 +30,9 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
         ValuesToCompare: Array<string>;
         IsNegative: boolean;
         IsIgnoreCase: boolean;
-        //UrlValidator
-        UrlPart: string;
-        //CookieValidator
-        CookieName: string;
-        //HttpHeaderValidator
-        HttpHeaderName: string;
+        UrlPart: string; // UrlValidator        
+        CookieName: string; // CookieValidator        
+        HttpHeaderName: string; // HttpHeaderValidator
     }
 
     export class TriggerModel {
@@ -66,9 +62,6 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
         static readonly Contains = "Contains";
         static readonly EqualsAny = "EqualsAny";
         static readonly ContainsAny = "ContainsAny";
-        static readonly StartsWith = "StartsWith";
-        static readonly EndsWith = "EndsWith";
-        static readonly MatchesWith = "MatchesWith";
     }
 
     export class LogicalOperatorType {
