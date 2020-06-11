@@ -250,7 +250,7 @@ router.get('/', function (req, res, next) {
     if (validationResult.doRedirect()) {
       // Adding no cache headers to prevent browsers to cache requests
       res.set({
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
         'Pragma': 'no-cache',
         'Expires': 'Fri, 01 Jan 1990 00:00:00 GMT'
       });
@@ -335,7 +335,7 @@ router.get('/', function (req, res, next) {
 	if (validationResult.doRedirect()) {
       // Adding no cache headers to prevent browsers to cache requests
       res.set({
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
         'Pragma': 'no-cache',
         'Expires': 'Fri, 01 Jan 1990 00:00:00 GMT'
       });
