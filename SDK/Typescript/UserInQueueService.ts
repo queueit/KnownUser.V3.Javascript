@@ -1,26 +1,15 @@
 namespace QueueIT.KnownUserV3.SDK {
     export class UserInQueueService {
-        static readonly SDK_VERSION = "v3-javascript-" + "3.6.0";
+        static readonly SDK_VERSION = "v3-javascript-" + "3.6.1";
 
         constructor(private userInQueueStateRepository: UserInQueueStateCookieRepository) {
         }
 
-        private getQueueITTokenValidationResult(
-            targetUrl: string,
+        private getValidTokenResult(
             config: QueueEventConfig,
             queueParams: QueueUrlParams,
-            customerId: string,
             secretKey: string)
             : RequestValidationResult {
-            const calculatedHash = Utils.generateSHA256Hash(secretKey, queueParams.queueITTokenWithoutHash);
-            if (calculatedHash !== queueParams.hashCode)
-                return this.cancelQueueCookieReturnErrorResult(customerId, targetUrl, config, queueParams, "hash");
-
-            if (queueParams.eventId !== config.eventId)
-                return this.cancelQueueCookieReturnErrorResult(customerId, targetUrl, config, queueParams, "eventid");
-
-            if (queueParams.timeStamp < Utils.getCurrentTime())
-                return this.cancelQueueCookieReturnErrorResult(customerId, targetUrl, config, queueParams, "timestamp");
 
             this.userInQueueStateRepository.store(
                 config.eventId,
@@ -40,14 +29,13 @@ namespace QueueIT.KnownUserV3.SDK {
             );
         }
 
-        private cancelQueueCookieReturnErrorResult(
+        private getErrorResult(
             customerId: string,
             targetUrl: string,
             config: QueueEventConfig,
             qParams: QueueUrlParams,
             errorCode: string)
             : RequestValidationResult {
-            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain);
 
             let query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName) +
                 `&queueittoken=${qParams.queueITToken}` +
@@ -68,12 +56,11 @@ namespace QueueIT.KnownUserV3.SDK {
             );
         }
 
-        private cancelQueueCookieReturnQueueResult(
+        private getQueueResult(
             targetUrl: string,
             config: QueueEventConfig,
             customerId: string)
             : RequestValidationResult {
-            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain);
 
             let query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName) +
                 (targetUrl ? "&t=" + Utils.encodeUrl(targetUrl) : "");
@@ -149,14 +136,32 @@ namespace QueueIT.KnownUserV3.SDK {
                     config.actionName
                 );
             }
-            const queueParmas = QueueParameterHelper.extractQueueParams(queueitToken);
+            const queueParams = QueueParameterHelper.extractQueueParams(queueitToken);
 
-            if (queueParmas !== null) {
-                return this.getQueueITTokenValidationResult(targetUrl, config, queueParmas, customerId, secretKey);
+            let requestValidationResult: RequestValidationResult= null;
+            let isTokenValid = false;
+
+            if (queueParams != null) {
+                var tokenValidationResult = this.validateToken(config, queueParams, secretKey);
+                isTokenValid = tokenValidationResult.isValid;
+
+                if (isTokenValid) {
+                    requestValidationResult = this.getValidTokenResult(config, queueParams, secretKey);
+                }
+                else {
+                    requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueParams, tokenValidationResult.errorCode);
+                }
             }
             else {
-                return this.cancelQueueCookieReturnQueueResult(targetUrl, config, customerId);
+                requestValidationResult = this.getQueueResult(targetUrl, config, customerId);
             }
+
+            if (state.isFound && !isTokenValid) {
+                this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain);
+            }
+
+            return requestValidationResult;
+
         }
 
         public validateCancelRequest(
@@ -208,5 +213,34 @@ namespace QueueIT.KnownUserV3.SDK {
             actionName: string): RequestValidationResult {
             return new RequestValidationResult(ActionTypes.IgnoreAction, null, null, null, null, actionName);
         }
+
+        private validateToken(
+            config: QueueEventConfig,
+            queueParams: QueueUrlParams,
+            secretKey: string): TokenValidationResult {
+
+            const calculatedHash = Utils.generateSHA256Hash(secretKey, queueParams.queueITTokenWithoutHash);
+
+            if (calculatedHash !== queueParams.hashCode)
+                return new TokenValidationResult(false, "hash");
+
+            if (queueParams.eventId !== config.eventId)
+                return new TokenValidationResult(false, "eventid");
+
+            if (queueParams.timeStamp < Utils.getCurrentTime())
+                return new TokenValidationResult(false, "timestamp");
+
+            return new TokenValidationResult(true, null);
+        }
+
     }
+    class TokenValidationResult {
+        constructor(
+            public isValid: boolean,
+            public errorCode: string) {
+
+        }
+
+    }
+
 }

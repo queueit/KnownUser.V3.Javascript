@@ -57,13 +57,14 @@ namespace QueueIT.KnownUserV3.SDK {
                 var cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
                 var cookie = this.httpContextProvider.getHttpRequest().getCookieValue(cookieKey);
                 if (!cookie)
-                    return new StateInfo(false, "", null, "");
+                    return new StateInfo(false, false, "", null, "");
 
                 var cookieValues = CookieHelper.toMapFromValue(cookie);
                 if (!this.isCookieValid(secretKey, cookieValues, eventId, cookieValidityMinutes, validateTime))
-                    return new StateInfo(false, "", null, "");
+                    return new StateInfo(true,false, "", null, "");
 
                 return new StateInfo(
+                    true,
                     true,
                     cookieValues[UserInQueueStateCookieRepository._QueueIdKey],
                     cookieValues[UserInQueueStateCookieRepository._FixedCookieValidityMinutesKey]
@@ -72,7 +73,7 @@ namespace QueueIT.KnownUserV3.SDK {
                     cookieValues[UserInQueueStateCookieRepository._RedirectTypeKey]);
             }
             catch (ex) {
-                return new StateInfo(false, "", null, "");
+                return new StateInfo(true,false, "", null, "");
             }
         }
 
@@ -162,7 +163,7 @@ namespace QueueIT.KnownUserV3.SDK {
     }
 
     export class StateInfo {
-        constructor(public isValid: boolean, public queueId: string,
+        constructor(public isFound,public isValid: boolean, public queueId: string,
             public fixedCookieValidityMinutes: number | null, public redirectType: string) {
         }
 
