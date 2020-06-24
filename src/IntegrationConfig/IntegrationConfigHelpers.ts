@@ -1,11 +1,14 @@
-namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
+import * as IntegrationModels  from './IntegrationConfigModel'
+import {KnownUserException} from '../Models'
+import {IHttpRequest} from '../HttpContextProvider'
+
     export interface IIntegrationEvaluator {
         getMatchedIntegrationConfig(
-            customerIntegration: CustomerIntegration, currentPageUrl: string, request: IHttpRequest): IntegrationConfigModel;
+            customerIntegration: IntegrationModels.CustomerIntegration, currentPageUrl: string, request: IHttpRequest): IntegrationModels.IntegrationConfigModel;
     }
 
     export class IntegrationEvaluator implements IIntegrationEvaluator {
-        public getMatchedIntegrationConfig(customerIntegration: CustomerIntegration, currentPageUrl: string, request: IHttpRequest): IntegrationConfigModel {
+        public getMatchedIntegrationConfig(customerIntegration: IntegrationModels.CustomerIntegration, currentPageUrl: string, request: IHttpRequest): IntegrationModels.IntegrationConfigModel {
 
             if (!request)
                 throw new KnownUserException("request is null");
@@ -23,9 +26,9 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
             return null;
         }
 
-        private evaluateTrigger(trigger: TriggerModel, currentPageUrl: string, request: IHttpRequest) {
+        private evaluateTrigger(trigger: IntegrationModels.TriggerModel, currentPageUrl: string, request: IHttpRequest) {
             let part;
-            if (trigger.LogicalOperator === LogicalOperatorType.Or) {
+            if (trigger.LogicalOperator === IntegrationModels.LogicalOperatorType.Or) {
                 for (part of trigger.TriggerParts) {
                     if (this.evaluateTriggerPart(part, currentPageUrl, request))
                         return true;
@@ -41,17 +44,17 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
             }
         }
 
-        private evaluateTriggerPart(triggerPart: TriggerPart, currentPageUrl: string, request: IHttpRequest): boolean {
+        private evaluateTriggerPart(triggerPart: IntegrationModels.TriggerPart, currentPageUrl: string, request: IHttpRequest): boolean {
             switch (triggerPart.ValidatorType) {
-                case ValidatorType.UrlValidator:
+                case IntegrationModels.ValidatorType.UrlValidator:
                     return UrlValidatorHelper.evaluate(triggerPart, currentPageUrl);
-                case ValidatorType.CookieValidator:
+                case IntegrationModels.ValidatorType.CookieValidator:
                     return CookieValidatorHelper.evaluate(triggerPart, request);
-                case ValidatorType.UserAgentValidator:
+                case IntegrationModels.ValidatorType.UserAgentValidator:
                     return UserAgentValidatorHelper.evaluate(triggerPart, request.getUserAgent());
-                case ValidatorType.HttpHeaderValidator:
+                case IntegrationModels.ValidatorType.HttpHeaderValidator:
                     return HttpHeaderValidatorHelper.evaluate(triggerPart, request.getHeader(triggerPart.HttpHeaderName));
-                case ValidatorType.RequestBodyValidator:
+                case IntegrationModels.ValidatorType.RequestBodyValidator:
                     return RequestBodyValidatorHelper.evaluate(triggerPart, request.getRequestBodyAsString());
                 default:
                     return false;
@@ -60,7 +63,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
     }
 
     export class UrlValidatorHelper {
-        public static evaluate(triggerPart: TriggerPart, url: string): boolean {
+        public static evaluate(triggerPart: IntegrationModels.TriggerPart, url: string): boolean {
             return ComparisonOperatorHelper.evaluate(
                 triggerPart.Operator,
                 triggerPart.IsNegative,
@@ -70,13 +73,13 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
                 triggerPart.ValuesToCompare);
         }
 
-        private static getUrlPart(triggerPart: TriggerPart, url: string): string {
+        private static getUrlPart(triggerPart: IntegrationModels.TriggerPart, url: string): string {
             switch (triggerPart.UrlPart) {
-                case UrlPartType.PagePath:
+                case IntegrationModels.UrlPartType.PagePath:
                     return this.getPathFromUrl(url);
-                case UrlPartType.PageUrl:
+                case IntegrationModels.UrlPartType.PageUrl:
                     return url;
-                case UrlPartType.HostName:
+                case IntegrationModels.UrlPartType.HostName:
                     return this.getHostNameFromUrl(url);
                 default:
                     return "";
@@ -101,7 +104,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
     }
 
     export class CookieValidatorHelper {
-        public static evaluate(triggerPart: TriggerPart, request: IHttpRequest): boolean {
+        public static evaluate(triggerPart: IntegrationModels.TriggerPart, request: IHttpRequest): boolean {
             return ComparisonOperatorHelper.evaluate(triggerPart.Operator,
                 triggerPart.IsNegative,
                 triggerPart.IsIgnoreCase,
@@ -121,7 +124,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
     }
 
     export class UserAgentValidatorHelper {
-        public static evaluate(triggerPart: TriggerPart, userAgent: string): boolean {
+        public static evaluate(triggerPart: IntegrationModels.TriggerPart, userAgent: string): boolean {
 
             return ComparisonOperatorHelper.evaluate(triggerPart.Operator,
                 triggerPart.IsNegative,
@@ -133,7 +136,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
     }
 
     export class RequestBodyValidatorHelper {
-        public static evaluate(triggerPart: TriggerPart, bodyString: string): boolean {
+        public static evaluate(triggerPart: IntegrationModels.TriggerPart, bodyString: string): boolean {
 
             return ComparisonOperatorHelper.evaluate(triggerPart.Operator,
                 triggerPart.IsNegative,
@@ -145,7 +148,7 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
     }
 
     export class HttpHeaderValidatorHelper {
-        public static evaluate(triggerPart: TriggerPart, headerValue: string): boolean {
+        public static evaluate(triggerPart: IntegrationModels.TriggerPart, headerValue: string): boolean {
             return ComparisonOperatorHelper.evaluate(triggerPart.Operator,
                 triggerPart.IsNegative,
                 triggerPart.IsIgnoreCase,
@@ -164,13 +167,13 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
             valuesToCompare = valuesToCompare || [];
 
             switch (opt) {
-                case ComparisonOperatorType.EqualS:
+                case IntegrationModels.ComparisonOperatorType.EqualS:
                     return ComparisonOperatorHelper.equalS(value, valueToCompare, isNegative, isIgnoreCase);
-                case ComparisonOperatorType.Contains:
+                case IntegrationModels.ComparisonOperatorType.Contains:
                     return ComparisonOperatorHelper.contains(value, valueToCompare, isNegative, isIgnoreCase);
-                case ComparisonOperatorType.EqualsAny:
+                case IntegrationModels.ComparisonOperatorType.EqualsAny:
                     return ComparisonOperatorHelper.equalsAny(value, valuesToCompare, isNegative, isIgnoreCase);
-                case ComparisonOperatorType.ContainsAny:
+                case IntegrationModels.ComparisonOperatorType.ContainsAny:
                     return ComparisonOperatorHelper.containsAny(value, valuesToCompare, isNegative, isIgnoreCase);
                 default:
                     return false;
@@ -226,4 +229,3 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
             return isNegative;
         }
     }
-}

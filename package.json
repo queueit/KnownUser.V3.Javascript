@@ -1,0 +1,14 @@
+{
+  "name": "queueit-knownuser",
+  "version": "3.6.2",
+  "description": "SDK to integrate Queue-it into a javascript based server side application.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prepublish": "npm run build",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "QueueIT",
+  "license": "GNU Lesser General Public License v3.0"
+}

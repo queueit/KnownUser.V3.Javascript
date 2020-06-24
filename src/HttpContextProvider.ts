@@ -1,5 +1,4 @@
-namespace QueueIT.KnownUserV3.SDK {
-    export interface IHttpRequest {
+export interface IHttpRequest {
         getUserAgent(): string;
         getHeader(name: string): string;
         getAbsoluteUri(): string;
@@ -16,4 +15,3 @@ namespace QueueIT.KnownUserV3.SDK {
         getHttpRequest(): IHttpRequest;
         getHttpResponse(): IHttpResponse;
     }
-}

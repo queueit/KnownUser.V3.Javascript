@@ -1,4 +1,4 @@
-namespace QueueIT.KnownUserV3.SDK {
+import {KnownUserException,RequestValidationResult} from './Models'
     export class Utils {
         static encodeUrl(url: string) {
             if (!url)
@@ -192,4 +192,3 @@ namespace QueueIT.KnownUserV3.SDK {
             return diagnostics;
         }
     }
-}

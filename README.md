@@ -58,8 +58,7 @@ var express = require('express');
 var router = express.Router();
 var fs = require('fs');
 
-require('node-import');
-module.exports = imports("./sdk/queueit-knownuserv3-sdk.js");
+var QueueITConnector = require('./src/index');
 
 configureKnownUserHashing();
 
@@ -73,7 +72,7 @@ router.get('/', function (req, res, next) {
 
     var httpContextProvider = initializeExpressHttpContextProvider(req, res);
 
-    var knownUser = QueueIT.KnownUserV3.SDK.KnownUser;
+    var knownUser = QueueITConnector.KnownUser;
     var queueitToken = req.query[knownUser.QueueITTokenKey];
     var requestUrl = httpContextProvider.getHttpRequest().getAbsoluteUri();
     var requestUrlWithoutToken = requestUrl.replace(new RegExp("([\?&])(" + knownUser.QueueITTokenKey + "=[^&]*)", 'i'), "");
@@ -194,7 +193,7 @@ function initializeExpressHttpContextProvider(req, res) {
 Code to configure hashing in KnownUser SDK (requires node module 'crypto'):
 ```
 function configureKnownUserHashing() {
-    var utils = QueueIT.KnownUserV3.SDK.Utils;
+    var utils = QueueITConnector.Utils;
     utils.generateSHA256Hash = function (secretKey, stringToHash) {
       const crypto = require('crypto');
       const hash = crypto.createHmac('sha256', secretKey)
@@ -235,8 +234,7 @@ var express = require('express');
 var router = express.Router();
 var fs = require('fs');
 
-require('node-import');
-module.exports = imports("./sdk/queueit-knownuserv3-sdk.js");
+var QueueITConnector = require('./src/index');
 
 configureKnownUserHashing();
 
@@ -248,7 +246,7 @@ router.get('/', function (req, res, next) {
     var customerId = ""; // Your Queue-it customer ID
     var secretKey = ""; // Your 72 char secret key as specified in Go Queue-it self-service platform
 
-    var queueConfig = new QueueIT.KnownUserV3.SDK.QueueEventConfig();
+    var queueConfig = new QueueITConnector.QueueEventConfig();
     queueConfig.eventId = "" // ID of the queue to use
     queueConfig.queueDomain = "xxx.queue-it.net" // Domain name of the queue
     // queueConfig.cookieDomain = ".my-shop.com" // Optional - Domain name where the Queue-it session cookie should be saved
@@ -259,7 +257,7 @@ router.get('/', function (req, res, next) {
 
     var httpContextProvider = initializeExpressHttpContextProvider(req, res);
 
-    var knownUser = QueueIT.KnownUserV3.SDK.KnownUser;
+    var knownUser = QueueITConnector.KnownUser;
     var queueitToken = req.query[knownUser.QueueITTokenKey];
     var requestUrl = httpContextProvider.getHttpRequest().getAbsoluteUri();
     var requestUrlWithoutToken = requestUrl.replace(new RegExp("([\?&])(" + knownUser.QueueITTokenKey + "=[^&]*)", 'i'), "");

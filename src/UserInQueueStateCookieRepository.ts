@@ -1,4 +1,6 @@
-namespace QueueIT.KnownUserV3.SDK {
+import {IHttpContextProvider } from './HttpContextProvider'
+import {Utils,CookieHelper} from './QueueITHelpers'
+
     export class UserInQueueStateCookieRepository {
         private static readonly _QueueITDataKey = "QueueITAccepted-SDFrts345E-V3";
         private static readonly _HashKey = "Hash";
@@ -171,4 +173,3 @@ namespace QueueIT.KnownUserV3.SDK {
             return this.isValid && !this.fixedCookieValidityMinutes;
         }
     }
-}

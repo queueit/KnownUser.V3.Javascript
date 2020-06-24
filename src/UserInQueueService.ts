@@ -1,6 +1,10 @@
-namespace QueueIT.KnownUserV3.SDK {
+import {Utils,QueueUrlParams, QueueParameterHelper} from './QueueITHelpers'
+import {ActionTypes,RequestValidationResult,QueueEventConfig,CancelEventConfig} from './Models'
+import {UserInQueueStateCookieRepository} from './UserInQueueStateCookieRepository'
+
+
     export class UserInQueueService {
-        static readonly SDK_VERSION = "v3-javascript-" + "3.6.1";
+        static readonly SDK_VERSION = "v3-javascript-" + "3.6.2";
 
         constructor(private userInQueueStateRepository: UserInQueueStateCookieRepository) {
         }
@@ -242,5 +246,3 @@ namespace QueueIT.KnownUserV3.SDK {
         }
 
     }
-
-}

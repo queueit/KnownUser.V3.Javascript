@@ -1,4 +1,4 @@
-namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
+
     export class IntegrationConfigModel {
         Name: string;
         EventId: string;
@@ -74,4 +74,3 @@ namespace QueueIT.KnownUserV3.SDK.IntegrationConfig {
         public static readonly CancelAction = "Cancel";
         public static readonly QueueAction = "Queue";
     }
-}

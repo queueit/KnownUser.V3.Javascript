@@ -1,4 +1,5 @@
-namespace QueueIT.KnownUserV3.SDK {
+import {Utils} from './QueueITHelpers';
+
     export class QueueEventConfig {
         constructor(
             public eventId: string,
@@ -70,4 +71,3 @@ namespace QueueIT.KnownUserV3.SDK {
         public static readonly CancelAction = "Cancel";
         public static readonly IgnoreAction = "Ignore";
     }
-}
