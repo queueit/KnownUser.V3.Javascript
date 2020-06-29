@@ -1,3 +1,6 @@
-QueueIT.KnownUserV3.SDK.csproj
-./src
-./test
+Documentation
+src
+test
+.npmignore
+.gitignore
+tsconfig.json

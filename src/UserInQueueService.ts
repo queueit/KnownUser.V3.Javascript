@@ -4,7 +4,7 @@ import {UserInQueueStateCookieRepository} from './UserInQueueStateCookieReposito
 
 
     export class UserInQueueService {
-        static readonly SDK_VERSION = "v3-javascript-" + "3.6.2";
+        static readonly SDK_VERSION = "v3-javascript-" + "3.6.3";
 
         constructor(private userInQueueStateRepository: UserInQueueStateCookieRepository) {
         }
