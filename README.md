@@ -1,7 +1,7 @@
 >You can find the latest released version [here](https://github.com/queueit/KnownUser.V3.Javascript/releases/latest)
 
 # KnownUser.V3.Javascript
-The Queue-it Security Framework is used to ensure that end users cannot bypass the queue by adding a server-side integration to your server. It was developed with TypeScript and verified using Nodejs v.8.12 and Express v.4.16.
+The [Queue-it](https://queue-it.com) Security Framework is used to ensure that end users cannot bypass the queue by adding a server-side integration to your server. It was developed with TypeScript and verified using Nodejs v.8.12 and Express v.4.16.
 
 ## Introduction
 When a user is redirected back from the queue to your website, the queue engine can attache a query string parameter (`queueittoken`) containing some information about the user. 
