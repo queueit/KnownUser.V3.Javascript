@@ -1,5 +1,5 @@
->You can find the latest released version [here](https://github.com/queueit/KnownUser.V3.Javascript/releases/latest)
-
+>You can find the latest released version [here.](https://github.com/queueit/KnownUser.V3.Javascript/releases/latest)
+>Download latest npm package from [here.](https://www.npmjs.com/package/queueit-knownuser)
 # KnownUser.V3.Javascript
 The [Queue-it](https://queue-it.com) Security Framework is used to ensure that end users cannot bypass the queue by adding a server-side integration to your server. It was developed with TypeScript and verified using Nodejs v.8.12 and Express v.4.16.
 
@@ -58,7 +58,7 @@ var express = require('express');
 var router = express.Router();
 var fs = require('fs');
 
-var QueueITConnector = require('./src/index');
+var QueueITConnector = require('queueit-knownuser');
 
 configureKnownUserHashing();
 
@@ -234,7 +234,7 @@ var express = require('express');
 var router = express.Router();
 var fs = require('fs');
 
-var QueueITConnector = require('./src/index');
+var QueueITConnector = require('queueit-knownuser');
 
 configureKnownUserHashing();
 
