@@ -51,7 +51,7 @@ The KnownUser validation must be done on *all requests except requests for stati
 So, if you add the KnownUser validation logic to a central place, then be sure that the Triggers only fire on page requests (including ajax requests) and not on e.g. image.
 
 The following is an example route in express/nodejs which shows how to validate that a user has been through the queue.
-It asumes that your integrationconfiguration file is located in root of the web application and the known user sdk file is in a folder called 'sdk'. Please note it uses the node module 'node-import' to import the SDK code.
+It asumes that your integrationconfiguration file is located in root of the web application.
  
 ```javascript
 var express = require('express');
