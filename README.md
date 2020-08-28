@@ -109,7 +109,7 @@ router.get('/', function (req, res, next) {
     }
     else {      
 	  // Request can continue - we remove queueittoken form querystring parameter to avoid sharing of user specific token
-      if (requestUrl !== requestUrlWithoutToken && validationResult.actionType) {
+      if (requestUrl !== requestUrlWithoutToken && validationResult.actionType === "Queue") {
         res.redirect(requestUrlWithoutToken);
       }
       else {
@@ -294,7 +294,7 @@ router.get('/', function (req, res, next) {
     }
     else {      
 	  // Request can continue - we remove queueittoken form querystring parameter to avoid sharing of user specific token
-      if (requestUrl !== requestUrlWithoutToken && validationResult.actionType) {
+      if (requestUrl !== requestUrlWithoutToken && validationResult.actionType === "Queue") {
         res.redirect(requestUrlWithoutToken);
       }
       else {
