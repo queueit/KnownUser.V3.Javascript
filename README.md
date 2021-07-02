@@ -1,4 +1,6 @@
 # KnownUser.V3.Javascript
+Before getting started please read the [documentation](https://github.com/queueit/Documentation/tree/main/serverside-connectors) to get acquainted with server-side connectors.
+
 Connector was developed with TypeScript and verified using Nodejs v.8.12 and Express v.4.16.
 
 You can find the latest released version [here](https://github.com/queueit/KnownUser.V3.Javascript/releases/latest). or download latest npm package from [here](https://www.npmjs.com/package/queueit-knownuser).
