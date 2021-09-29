@@ -7,7 +7,7 @@ export interface IHttpRequest {
     getRequestBodyAsString(): string;
 }
 export interface IHttpResponse {
-    setCookie(cookieName: string, cookieValue: string, domain: string, expiration: any): any;
+    setCookie(cookieName: string, cookieValue: string, domain: string, expiration: number, httpOnly: boolean, isSecure: boolean, sameSiteValue: string): any;
 }
 export interface IHttpContextProvider {
     getHttpRequest(): IHttpRequest;

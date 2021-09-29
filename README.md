@@ -92,7 +92,8 @@ module.exports = router;
 ```
 
 Code to initialize a httpContextProvider in Express (requires node module 'cookie-parser'):
-```
+
+```javascript
 function initializeExpressHttpContextProvider(req, res) {
     return {
         getHttpRequest: function () {
@@ -123,7 +124,7 @@ function initializeExpressHttpContextProvider(req, res) {
         },
         getHttpResponse: function () {
             var httpResponse = {
-                setCookie: function (cookieName, cookieValue, domain, expiration) {
+                setCookie: function (cookieName, cookieValue, domain, expiration, httpOnly, isSecure, sameSiteValue) {
                     if (domain === "")
                         domain = null;
 
@@ -138,8 +139,9 @@ function initializeExpressHttpContextProvider(req, res) {
                             expires: expirationDate,
                             path: "/",
                             domain: domain,
-                            secure: false,
-                            httpOnly: false
+                            secure: isSecure,
+                            httpOnly: httpOnly,
+                            sameSite: sameSiteValue
                         });
                 }
             };
@@ -150,7 +152,8 @@ function initializeExpressHttpContextProvider(req, res) {
 ```
 
 Code to configure hashing in KnownUser SDK (requires node module 'crypto'):
-```
+
+```javascript
 function configureKnownUserHashing() {
     var utils = QueueITConnector.Utils;
     utils.generateSHA256Hash = function (secretKey, stringToHash) {

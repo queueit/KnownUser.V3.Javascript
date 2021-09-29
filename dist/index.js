@@ -7,9 +7,10 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
     o[k2] = m[k];
 }));
 var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.QueueUrlParams = exports.QueueParameterHelper = exports.Utils = exports.KnownUser = void 0;
 var KnownUser_1 = require("./KnownUser");
 Object.defineProperty(exports, "KnownUser", { enumerable: true, get: function () { return KnownUser_1.KnownUser; } });
 __exportStar(require("./Models"), exports);
@@ -17,3 +18,4 @@ var QueueITHelpers_1 = require("./QueueITHelpers");
 Object.defineProperty(exports, "Utils", { enumerable: true, get: function () { return QueueITHelpers_1.Utils; } });
 Object.defineProperty(exports, "QueueParameterHelper", { enumerable: true, get: function () { return QueueITHelpers_1.QueueParameterHelper; } });
 Object.defineProperty(exports, "QueueUrlParams", { enumerable: true, get: function () { return QueueITHelpers_1.QueueUrlParams; } });
+//# sourceMappingURL=index.js.map

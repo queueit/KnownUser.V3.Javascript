@@ -3,6 +3,7 @@ var QueueITHelpers = require('./../dist/QueueITHelpers')
 var UserInQueueService = require('./../dist/UserInQueueService')
 var Models = require('./../dist/Models')
 var assert = require('assert');
+const expect = require('chai').expect;
 
 var utils = QueueITHelpers.Utils;
 const SDK_VERSION = UserInQueueService.UserInQueueService.SDK_VERSION;
@@ -118,12 +119,12 @@ var httpRequestMock = {
 };
 
 httpResponseMockCookies = {};
-var httpResponseMock = {
-    setCookie: function (name, value, domain, expire) {
-        httpResponseMockCookies[name] = { value: value, domain: domain, expire: expire };
+let httpResponseMock = {
+    setCookie: function (name, value, domain, expire, httpOnly, isSecure, sameSiteValue) {
+        httpResponseMockCookies[name] = {value, domain, expire, httpOnly, isSecure, sameSiteValue};
     }
 };
-var httpContextProvider = {
+let httpContextProvider = {
     getHttpRequest: function () {
         return httpRequestMock;
     },
@@ -783,8 +784,8 @@ var KnownUserTest = {
 
         //Arrange
         resetMocks();
-        var exceptionWasThrown = false;                
-        
+        var exceptionWasThrown = false;
+
 
         var integrationConfigString = `{
             "Description": "test",
@@ -1206,7 +1207,7 @@ var KnownUserTest = {
     },
 
     test_validateRequestByIntegrationConfig_CancelAction_AjaxCall: function () {
-        
+
         resetMocks();
         userInQueueServiceMock.validateQueueRequestResult = new Models.RequestValidationResult("Cancel", "eventid", "", "http://q.qeuue-it.com", null);
 
@@ -1389,6 +1390,8 @@ var KnownUserTest = {
                 "Name":
                     "event1action",
                 "ActionType": "Queue",
+                "IsCookieHttpOnly": false,
+                "IsCookieSecure": false,
                 "EventId":
                     "event1",
                 "CookieDomain":
@@ -1470,8 +1473,16 @@ var KnownUserTest = {
         assert(actualCookieValue.indexOf("RequestHttpHeader_XForwardedProto=xfp|") !== -1);
         assert(actualCookieValue.indexOf("MatchedConfig=event1action|") !== -1);
         assert(actualCookieValue.indexOf("TargetUrl=http://test.com?event1=true|") !== -1);
-        assert(actualCookieValue.indexOf("|QueueConfig=EventId:event1&Version:3&ActionName:event1action&QueueDomain:knownusertest.queue-it.net&CookieDomain:.test.com&ExtendCookieValidity:true&CookieValidityMinute:20&LayoutName:Christmas Layout by Queue-it&Culture:da-DK") !== -1);
-        assert(actualCookieValue.indexOf("SdkVersion=" + SDK_VERSION + "|") !== -1);
+        expect(actualCookieValue).to.contain("|QueueConfig=EventId:event1&Version:3&ActionName:event1action&QueueDomain:knownusertest.queue-it.net")
+        expect(actualCookieValue).to.contain(
+            "&CookieDomain:.test.com" +
+            "&IsCookieHttpOnly:false" +
+            "&IsCookieSecure:false"+
+            "&CookieSameSiteValue:undefined"+
+            "&ExtendCookieValidity:true" +
+            "&CookieValidityMinute:20");
+        expect(actualCookieValue).to.contain('LayoutName:Christmas Layout by Queue-it&Culture:da-DK')
+	expect(actualCookieValue).to.contain("SdkVersion=" + SDK_VERSION + "|");
     },
 
     test_validateRequestByIntegrationConfig_Debug_WithoutMatch: function () {
@@ -1784,7 +1795,7 @@ var KnownUserTest = {
         assert("https://customerId.api2.queue-it.net/customerId/diagnostics/connector/error/?code=hash" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
     },
-    
+
     test_resolveQueueRequestByLocalConfig_Debug: function () {
 
         resetMocks();
@@ -1818,6 +1829,9 @@ var KnownUserTest = {
 
         var eventconfig = new Models.QueueEventConfig();
         eventconfig.cookieDomain = "cookieDomain";
+        eventconfig.isCookieHttpOnly = false;
+        eventconfig.isCookieSecure = false;
+        eventconfig.cookieSameSiteValue = undefined;
         eventconfig.layoutName = "layoutName";
         eventconfig.culture = "culture";
         eventconfig.eventId = "eventId";
@@ -1844,7 +1858,17 @@ var KnownUserTest = {
         assert(actualCookieValue.indexOf("RequestHttpHeader_XForwardedFor=xff") !== -1);
         assert(actualCookieValue.indexOf("RequestHttpHeader_XForwardedHost=xfh") !== -1);
         assert(actualCookieValue.indexOf("RequestHttpHeader_XForwardedProto=xfp") !== -1);
-        assert(actualCookieValue.indexOf("QueueConfig=EventId:eventId&Version:12&ActionName:event1action&QueueDomain:queueDomain&CookieDomain:cookieDomain&ExtendCookieValidity:true&CookieValidityMinute:10&LayoutName:layoutName&Culture:culture") !== -1);
+        expect(actualCookieValue).to.contain("QueueConfig=EventId:eventId" +
+            "&Version:12&ActionName:event1action" +
+            "&QueueDomain:queueDomain" +
+            "&CookieDomain:cookieDomain" +
+            "&IsCookieHttpOnly:false" +
+            "&IsCookieSecure:false" +
+            "&CookieSameSiteValue:undefined" +
+            "&ExtendCookieValidity:true" +
+            "&CookieValidityMinute:10" +
+            "&LayoutName:layoutName" +
+            "&Culture:culture");
     },
 
     test_resolveQueueRequestByLocalConfig_Debug_NullConfig: function () {
@@ -2289,7 +2313,7 @@ var KnownUserTest = {
         assert("https://customerId.api2.queue-it.net/customerId/diagnostics/connector/error/?code=hash" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
     },
-    
+
     test_cancelRequestByLocalConfig_Exception_NoDebugToken: function () {
 
         resetMocks();
@@ -2328,7 +2352,7 @@ var KnownUserTest = {
         knownUser.UserInQueueService = userInQueueServiceMock;
         try
         {
-            var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", 
+            var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true",
                         "queueitToken", cancelEventconfig, "customerid", "secretKey", httpContextProvider);
         }
         catch

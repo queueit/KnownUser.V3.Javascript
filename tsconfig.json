@@ -7,7 +7,7 @@
     "noImplicitAny": false,
     "module": "CommonJS",
     "esModuleInterop": true,
-    "declaration": true
- 
+    "declaration": true,
+    "sourceMap": true
   }
 }

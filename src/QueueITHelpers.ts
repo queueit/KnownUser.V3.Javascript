@@ -113,11 +113,11 @@ import {KnownUserException,RequestValidationResult} from './Models'
     }
 
     export class CookieHelper {
-        public static toMapFromValue(cookieValue: string) {
+        public static toMapFromValue(cookieValue: string): object {
             try {
                 let result = {};
-                var decoded = cookieValue;
-                var items = decoded.split('&');
+                const decoded = cookieValue;
+                const items = decoded.split('&');
                 for (let item of items) {
                     let keyValue = item.split('=');
                     result[keyValue[0]] = keyValue[1];
@@ -133,11 +133,11 @@ import {KnownUserException,RequestValidationResult} from './Models'
         public static toValueFromKeyValueCollection(cookieValues: Array<{ key: string, value: string }>) {
             let values = new Array<string>();
 
-            for (var keyVal of cookieValues)
+            for (let keyVal of cookieValues){
                 values.push(`${keyVal.key}=${keyVal.value}`);
+            }
 
-            var result = values.join("&");
-            return result;
+            return values.join("&");
         }
     }
 

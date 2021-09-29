@@ -1,12 +1,15 @@
-﻿var QueueITHelpers = require('./../dist/QueueITHelpers')
-var Models = require('./../dist/Models')
-var UserInQueueService = require('./../dist/UserInQueueService')
-var UserInQueueStateCookieRepository = require('./../dist/UserInQueueStateCookieRepository')
+﻿const QueueITHelpers = require('./../dist/QueueITHelpers')
+const Models = require('./../dist/Models')
+const UserInQueueService = require('./../dist/UserInQueueService')
+const UserInQueueStateCookieRepository = require('./../dist/UserInQueueStateCookieRepository')
+const {assertUrlMatches, assertTimestamp} = require('./assertions');
 
+const assert = require('assert');
+const chai = require('chai');
+chai.use(require('chai-string'));
+const expect = require('chai').expect;
 
-var assert = require('assert');
-
-var utils = QueueITHelpers.Utils;
+const utils = QueueITHelpers.Utils;
 const SDK_VERSION = UserInQueueService.UserInQueueService.SDK_VERSION;
 utils.generateSHA256Hash = function (secretKey, stringToHash) {
     const crypto = require('crypto');
@@ -28,14 +31,37 @@ function generateHash(eventId, queueId, timestamp, extendableCookie, cookieValid
 var userInQueueStateCookieRepositoryMock = {};
 userInQueueStateCookieRepositoryMock.returnThisState = {};
 userInQueueStateCookieRepositoryMock.getState = function (eventId, cookieValidityMinutes, secretKey, validateTime) {
-    this.getStateCall = { eventId: eventId, cookieValidityMinutes: cookieValidityMinutes, secretKey: secretKey, validateTime: validateTime };
+    this.getStateCall = {
+        eventId: eventId,
+        cookieValidityMinutes: cookieValidityMinutes,
+        secretKey: secretKey,
+        validateTime: validateTime
+    };
     return this.returnThisState;
 };
-userInQueueStateCookieRepositoryMock.store = function (eventId, queueId, fixedCookieValidityMinutes, cookieDomain, redirectType, secretKey) {
-    this.storeCall = { eventId: eventId, queueId: queueId, fixedCookieValidityMinutes: fixedCookieValidityMinutes, cookieDomain: cookieDomain, redirectType: redirectType, secretKey: secretKey };
+userInQueueStateCookieRepositoryMock.store = function (eventId,
+                                                       queueId,
+                                                       fixedCookieValidityMinutes,
+                                                       cookieDomain,
+                                                       isCookieHttpOnly,
+                                                       isCookieSecure,
+                                                       cookieSameSiteValue,
+                                                       redirectType,
+                                                       secretKey) {
+    this.storeCall = {
+        eventId,
+        queueId,
+        fixedCookieValidityMinutes,
+        cookieDomain,
+        isCookieHttpOnly,
+        isCookieSecure,
+        cookieSameSiteValue,
+        redirectType,
+        secretKey
+    };
 };
 userInQueueStateCookieRepositoryMock.cancelQueueCookie = function (eventId, cookieDomain) {
-    this.cancelQueueCookieCall = { eventId: eventId, cookieDomain: cookieDomain };
+    this.cancelQueueCookieCall = {eventId: eventId, cookieDomain: cookieDomain};
 };
 
 userInQueueStateCookieRepositoryMock.reset = function () {
@@ -70,7 +96,7 @@ var UserInQueueServiceTest = {
     },
     test_validateQueueRequest_ValidState_ExtendableCookie_CookieExtensionFromConfig_DoNotRedirectDoStoreCookieWithExtension: function () {
         userInQueueStateCookieRepositoryMock.reset();
-        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(true,true, "queueId", null, "disabled");
+        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(true, true, "queueId", null, "disabled");
 
         var eventConfig = new Models.QueueEventConfig();
         eventConfig.eventId = "e1";
@@ -85,16 +111,20 @@ var UserInQueueServiceTest = {
         assert(result.eventId === 'e1');
         assert(result.queueId === "queueId");
 
-        assert(userInQueueStateCookieRepositoryMock.storeCall.eventId === "e1");
-        assert(userInQueueStateCookieRepositoryMock.storeCall.queueId === "queueId");
-        assert(userInQueueStateCookieRepositoryMock.storeCall.fixedCookieValidityMinutes === null);
-        assert(userInQueueStateCookieRepositoryMock.storeCall.cookieDomain === "testDomain");
-        assert(userInQueueStateCookieRepositoryMock.storeCall.redirectType === "disabled");
-        assert(userInQueueStateCookieRepositoryMock.storeCall.secretKey === "key");
+        const storeCall = userInQueueStateCookieRepositoryMock.storeCall;
+        assert(storeCall.eventId === "e1");
+        assert(storeCall.queueId === "queueId");
+        assert(storeCall.fixedCookieValidityMinutes === null);
+        assert(storeCall.cookieDomain === "testDomain");
+        assert(storeCall.redirectType === "disabled");
+        assert(storeCall.secretKey === "key");
+        expect(storeCall.isCookieHttpOnly).to.be.undefined;
+        expect(storeCall.isCookieSecure).to.be.undefined;
+        expect(storeCall.cookieSameSiteValue).to.be.undefined;
     },
     test_validateQueueRequest_ValidState_NoExtendableCookie_DoNotRedirectDoNotStoreCookieWithExtension: function () {
         userInQueueStateCookieRepositoryMock.reset();
-        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(true,true, "queueId", 3, "idle");
+        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(true, true, "queueId", 3, "idle");
 
         var eventConfig = new Models.QueueEventConfig();
         eventConfig.eventId = "e1";
@@ -110,9 +140,36 @@ var UserInQueueServiceTest = {
         assert(Object.keys(userInQueueStateCookieRepositoryMock.storeCall).length === 0);
 
     },
+    test_validateQueueRequest_SignTargetParameter: function () {
+        userInQueueStateCookieRepositoryMock.reset();
+        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false, false, null, null, null);
+
+        const url = "http://test.test.com?b=h";
+        const key = "4e1db821-a825-49da-acd0-5d376f2068db";
+        const eventConfig = new Models.QueueEventConfig();
+        eventConfig.eventId = "e1";
+        eventConfig.queueDomain = "testDomain.com";
+        eventConfig.cookieDomain = "testDomain";
+        eventConfig.cookieValidityMinute = 10;
+        eventConfig.extendCookieValidity = true;
+        eventConfig.version = 11;
+        eventConfig.actionName = 'Queue Action (._~-) &!*|\'"';
+
+        const result = userInQueueService.validateQueueRequest(url, "", eventConfig, "testCustomer", key);
+
+        assert(result.doRedirect());
+        assert(result.eventId === 'e1');
+        assertUrlMatches(result.redirectUrl, 'https://testDomain.com/', {
+            ver: SDK_VERSION,
+            cver: '11',
+            man: 'Queue%20Action%20%28._~-%29%20%26%21%2a%7C%27%22',
+            t: utils.encodeUrl(url)
+        });
+    },
+
     test_validateQueueRequest_NoCookie_TampredToken_RedirectToErrorPageWithHashError_DoNotStoreCookie: function () {
         userInQueueStateCookieRepositoryMock.reset();
-        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false,false, null, null, null);
+        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false, false, null, null, null);
 
         var key = "4e1db821-a825-49da-acd0-5d376f2068db";
         var eventConfig = new Models.QueueEventConfig();
@@ -126,27 +183,25 @@ var UserInQueueServiceTest = {
 
         var token = generateHash('e1', 'queueId', utils.getCurrentTime() + 3 * 60, 'False', null, 'idle', key);
         token = token.replace("False", "True");
-        var expectedErrorUrl = "https://testDomain.com/error/hash/?c=testCustomer&e=e1" +
-            "&ver=" + SDK_VERSION
-            + "&cver=11"
-            + "&man=Queue%20Action%20%28._~-%29%20%26%21%2a%7C%27%22"
-            + "&queueittoken=" + token
-            + "&t=" + utils.encodeUrl(url);
-
-        var result = userInQueueService.validateQueueRequest(url, token, eventConfig, "testCustomer", key);
+        const result = userInQueueService.validateQueueRequest(url, token, eventConfig, "testCustomer", key);
 
         assert(Object.keys(userInQueueStateCookieRepositoryMock.storeCall).length === 0);
         assert(result.doRedirect());
         assert(result.eventId === 'e1');
-        var tsPart = result.redirectUrl.match("&ts=[^&]*")[0];
-        var timestamp = tsPart.replace("&ts=", "");
-        assert(utils.getCurrentTime() - timestamp < 100);
-        var urlWithoutTimeStamp = result.redirectUrl.replace(tsPart, "");
-        assert(urlWithoutTimeStamp === expectedErrorUrl);
+        assertTimestamp(result.redirectUrl, timestamp => utils.getCurrentTime() - timestamp < 100)
+        assertUrlMatches(result.redirectUrl, 'https://testDomain.com/error/hash/', {
+            c: 'testCustomer',
+            e: 'e1',
+            ver: SDK_VERSION,
+            cver: '11',
+            man: 'Queue%20Action%20%28._~-%29%20%26%21%2a%7C%27%22',
+            queueittoken: token,
+            t: utils.encodeUrl(url)
+        })
     },
     test_validateQueueRequest_NoCookie_ExpiredTimeStampInToken_RedirectToErrorPageWithTimeStampError_DoNotStoreCookie: function () {
         userInQueueStateCookieRepositoryMock.reset();
-        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false,false, null, null, null);
+        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false, false, null, null, null);
 
         var key = "4e1db821-a825-49da-acd0-5d376f2068db";
         var eventConfig = new Models.QueueEventConfig();
@@ -154,33 +209,30 @@ var UserInQueueServiceTest = {
         eventConfig.queueDomain = "testDomain.com";
         eventConfig.cookieValidityMinute = 10;
         eventConfig.extendCookieValidity = false;
-        eventConfig.version = 11;
+        eventConfig.version = '11';
         eventConfig.actionName = "QueueAction";
         var url = "http://test.test.com?b=h";
 
         var token = generateHash('e1', 'queueId', utils.getCurrentTime() - 3 * 60, 'False', null, 'queue', key);
-        var expectedErrorUrl = "https://testDomain.com/error/timestamp/?c=testCustomer&e=e1" +
-            "&ver=" + SDK_VERSION
-            + "&cver=" + eventConfig.version
-            + "&man=" + eventConfig.actionName
-            + "&queueittoken=" + token
-            + "&t=" + utils.encodeUrl(url);
-
         var result = userInQueueService.validateQueueRequest(url, token, eventConfig, "testCustomer", key);
 
         assert(Object.keys(userInQueueStateCookieRepositoryMock.storeCall).length === 0);
         assert(result.doRedirect());
         assert(result.eventId === 'e1');
-        var tsPart = result.redirectUrl.match("&ts=[^&]*")[0];
-        var timestamp = tsPart.replace("&ts=", "");
-        assert(utils.getCurrentTime() - timestamp < 100);
-        var urlWithoutTimeStamp = result.redirectUrl.replace(tsPart, "");
-
-        assert(urlWithoutTimeStamp === expectedErrorUrl);
+        assertTimestamp(result.redirectUrl, timestamp => utils.getCurrentTime() - timestamp < 100);
+        assertUrlMatches(result.redirectUrl, 'https://testDomain.com/error/timestamp/', {
+            c: 'testCustomer',
+            e: 'e1',
+            ver: SDK_VERSION,
+            cver: eventConfig.version,
+            man: eventConfig.actionName,
+            queueittoken: token,
+            t: utils.encodeUrl(url)
+        });
     },
     test_validateQueueRequest_NoCookie_EventIdMismatch_RedirectToErrorPageWithEventIdMissMatchError_DoNotStoreCookie: function () {
         userInQueueStateCookieRepositoryMock.reset();
-        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false,false, null, null, null);
+        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false, false, null, null, null);
 
         var key = "4e1db821-a825-49da-acd0-5d376f2068db";
         var eventConfig = new Models.QueueEventConfig();
@@ -192,44 +244,42 @@ var UserInQueueServiceTest = {
         eventConfig.actionName = "QueueAction";
         var url = "http://test.test.com?b=h";
 
-        var token = generateHash('e1', 'queueId', utils.getCurrentTime() - 3 * 60, 'False', null, 'queue', key);
-        var expectedErrorUrl = "https://testDomain.com/error/eventid/?c=testCustomer&e=e2" +
-            "&ver=" + SDK_VERSION
-            + "&cver=10"
-            + "&man=QueueAction"
-            + "&queueittoken=" + token
-            + "&t=" + utils.encodeUrl(url);
-
-        var result = userInQueueService.validateQueueRequest(url, token, eventConfig, "testCustomer", key);
+        const token = generateHash('e1', 'queueId', utils.getCurrentTime() - 3 * 60, 'False', null, 'queue', key);
+        const result = userInQueueService.validateQueueRequest(url, token, eventConfig, "testCustomer", key);
 
         assert(Object.keys(userInQueueStateCookieRepositoryMock.storeCall).length === 0);
         assert(Object.keys(userInQueueStateCookieRepositoryMock.cancelQueueCookieCall).length == 0);
         assert(result.doRedirect());
         assert(result.eventId === 'e2');
         assert(result.actionType === 'Queue');
-        var tsPart = result.redirectUrl.match("&ts=[^&]*")[0];
-        var timestamp = tsPart.replace("&ts=", "");
-        assert(utils.getCurrentTime() - timestamp < 100);
-        var urlWithoutTimeStamp = result.redirectUrl.replace(tsPart, "");
-
-        assert(urlWithoutTimeStamp === expectedErrorUrl);
+        assertTimestamp(result.redirectUrl, timestamp => utils.getCurrentTime() - timestamp < 100)
+        assertUrlMatches(result.redirectUrl, 'https://testDomain.com/error/eventid/', {
+            c: 'testCustomer',
+            e: 'e2',
+            ver: SDK_VERSION,
+            cver: '10',
+            man: 'QueueAction',
+            queueittoken: token,
+            t: utils.encodeUrl(url)
+        });
     },
     test_validateQueueRequest_NoCookie_ValidToken_ExtendableCookie_DoNotRedirect_StoreExtendableCookie: function () {
         userInQueueStateCookieRepositoryMock.reset();
         userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false, false, null, null, null);
 
-        var key = "4e1db821-a825-49da-acd0-5d376f2068db";
-        var eventConfig = new Models.QueueEventConfig();
+        const key = "4e1db821-a825-49da-acd0-5d376f2068db";
+        const eventConfig = new Models.QueueEventConfig();
         eventConfig.eventId = "e1";
         eventConfig.queueDomain = "testDomain.com";
         eventConfig.cookieValidityMinute = 10;
         eventConfig.cookieDomain = "testDomain";
+        eventConfig.isCookieHttpOnly = true;
         eventConfig.extendCookieValidity = true;
         eventConfig.version = 11;
-        var url = "http://test.test.com?b=h";
+        const url = "http://test.test.com?b=h";
 
-        var token = generateHash('e1', 'queueId', utils.getCurrentTime() + 3 * 60, 'true', null, 'queue', key);
-        var result = userInQueueService.validateQueueRequest(url, token, eventConfig, "testCustomer", key);
+        const token = generateHash('e1', 'queueId', utils.getCurrentTime() + 3 * 60, 'true', null, 'queue', key);
+        const result = userInQueueService.validateQueueRequest(url, token, eventConfig, "testCustomer", key);
 
         assert(!result.doRedirect());
         assert(result.eventId === 'e1');
@@ -240,13 +290,14 @@ var UserInQueueServiceTest = {
         assert(userInQueueStateCookieRepositoryMock.storeCall.queueId === "queueId");
         assert(!userInQueueStateCookieRepositoryMock.storeCall.fixedCookieValidityMinutes);
         assert(userInQueueStateCookieRepositoryMock.storeCall.cookieDomain === "testDomain");
+        assert(userInQueueStateCookieRepositoryMock.storeCall.isCookieHttpOnly === true);
         assert(userInQueueStateCookieRepositoryMock.storeCall.redirectType === "queue");
         assert(userInQueueStateCookieRepositoryMock.storeCall.secretKey === key);
         assert(Object.keys(userInQueueStateCookieRepositoryMock.cancelQueueCookieCall).length === 0);
     },
     test_validateQueueRequest_NoCookie_ValidToken_CookieValidityMinuteFromToken_DoNotRedirect_StoreNonExtendableCookie: function () {
         userInQueueStateCookieRepositoryMock.reset();
-        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false,false, null, null, null);
+        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false, false, null, null, null);
 
         var key = "4e1db821-a825-49da-acd0-5d376f2068db";
         var eventConfig = new Models.QueueEventConfig();
@@ -275,7 +326,7 @@ var UserInQueueServiceTest = {
     },
     test_NoCookie_NoValidToken_WithoutToken_RedirectToQueue: function () {
         userInQueueStateCookieRepositoryMock.reset();
-        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false,false, null, null, null);
+        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false, false, null, null, null);
 
         var key = "4e1db821-a825-49da-acd0-5d376f2068db";
         var eventConfig = new Models.QueueEventConfig();
@@ -287,27 +338,27 @@ var UserInQueueServiceTest = {
         eventConfig.culture = 'en-US';
         eventConfig.layoutName = 'testlayout';
 
-        var url = "http://test.test.com?b=h";
-        var token = "";
-
-        var expectedRedirectUrl = "https://testDomain.com/?c=testCustomer&e=e1" +
-            "&ver=" + SDK_VERSION
-            + "&cver=11"
-            + "&man=unspecified"
-            + "&cid=en-US"
-            + "&l=testlayout"
-            + "&t=" + utils.encodeUrl(url);
-
-        var result = userInQueueService.validateQueueRequest(url, token, eventConfig, "testCustomer", key);
+        const url = "http://test.test.com?b=h";
+        const token = "";
+        const result = userInQueueService.validateQueueRequest(url, token, eventConfig, "testCustomer", key);
 
         assert(Object.keys(userInQueueStateCookieRepositoryMock.storeCall).length === 0);
         assert(result.doRedirect());
         assert(result.eventId === 'e1');
         assert(result.queueId === null);
-        assert(result.redirectUrl === expectedRedirectUrl);
+        assertUrlMatches(result.redirectUrl, 'https://testDomain.com/', {
+            c: 'testCustomer',
+            e: 'e1',
+            ver: SDK_VERSION,
+            cver: '11',
+            man: 'unspecified',
+            cid: 'en-US',
+            l: 'testlayout',
+            t: utils.encodeUrl(url)
+        });
     },
     test_InValidCookie_WithoutToken_RedirectToQueue_CancelCookie: function () {
-        userInQueueStateCookieRepositoryMock.reset();        
+        userInQueueStateCookieRepositoryMock.reset();
         userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(true, false, null, null, null);
 
         var key = "4e1db821-a825-49da-acd0-5d376f2068db";
@@ -320,29 +371,29 @@ var UserInQueueServiceTest = {
         eventConfig.culture = 'en-US';
         eventConfig.layoutName = 'testlayout';
 
-        var url = "http://test.test.com?b=h";
-        var token = "";
-
-        var expectedRedirectUrl = "https://testDomain.com/?c=testCustomer&e=e1" +
-            "&ver=" + SDK_VERSION
-            + "&cver=11"
-            + "&man=unspecified"
-            + "&cid=en-US"
-            + "&l=testlayout"
-            + "&t=" + utils.encodeUrl(url);
-
-        var result = userInQueueService.validateQueueRequest(url, token, eventConfig, "testCustomer", key);
+        const url = "http://test.test.com?b=h";
+        const token = "";
+        const result = userInQueueService.validateQueueRequest(url, token, eventConfig, "testCustomer", key);
 
         assert(Object.keys(userInQueueStateCookieRepositoryMock.storeCall).length === 0);
         assert(result.doRedirect());
         assert(result.eventId === 'e1');
         assert(result.queueId === null);
-        assert(result.redirectUrl === expectedRedirectUrl);
         assert(userInQueueStateCookieRepositoryMock.cancelQueueCookieCall);
+        assertUrlMatches(result.redirectUrl, 'https://testDomain.com/', {
+            c: 'testCustomer',
+            e: 'e1',
+            ver: SDK_VERSION,
+            cver: '11',
+            man: 'unspecified',
+            cid: 'en-US',
+            l: 'testlayout',
+            t: utils.encodeUrl(url)
+        });
     },
     test_validateRequest_NoCookie_WithoutToken_RedirectToQueue_NotargetUrl: function () {
         userInQueueStateCookieRepositoryMock.reset();
-        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false,false, null, null, null);
+        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false, false, null, null, null);
 
         var key = "4e1db821-a825-49da-acd0-5d376f2068db";
         var eventConfig = new Models.QueueEventConfig();
@@ -372,7 +423,7 @@ var UserInQueueServiceTest = {
     },
     test_validateQueueRequest_NoCookie_InValidToken: function () {
         userInQueueStateCookieRepositoryMock.reset();
-        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false,false, null, null, null);
+        userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(false, false, null, null, null);
 
         var key = "4e1db821-a825-49da-acd0-5d376f2068db";
         var eventConfig = new Models.QueueEventConfig();
@@ -398,7 +449,7 @@ var UserInQueueServiceTest = {
         assert(Object.keys(userInQueueStateCookieRepositoryMock.cancelQueueCookieCall).length == 0);
     },
     test_validateQueueRequest_InvalidCookie_InValidToken_CancelCookie: function () {
-        userInQueueStateCookieRepositoryMock.reset();        
+        userInQueueStateCookieRepositoryMock.reset();
         userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(true, false, null, null, null);
 
         var key = "4e1db821-a825-49da-acd0-5d376f2068db";
@@ -428,32 +479,31 @@ var UserInQueueServiceTest = {
         userInQueueStateCookieRepositoryMock.reset();
         userInQueueStateCookieRepositoryMock.returnThisState = new UserInQueueStateCookieRepository.StateInfo(true, true, "queueid", 3, "idle");
 
-        var key = "4e1db821-a825-49da-acd0-5d376f2068db";
-        var eventConfig = new Models.CancelEventConfig();
+        const key = "4e1db821-a825-49da-acd0-5d376f2068db";
+        const eventConfig = new Models.CancelEventConfig();
         eventConfig.eventId = "e1";
         eventConfig.queueDomain = "testDomain.com";
         eventConfig.cookieDomain = "testdomain";
         eventConfig.version = 10;
         eventConfig.actionName = "Cancel";
 
-        var url = "http://test.test.com?b=h";
-        var token = "";
-
-        var expectedUrl = "https://testDomain.com/cancel/testCustomer/e1/?c=testCustomer&e=e1"
-            + "&ver=" + SDK_VERSION
-            + "&cver=" + eventConfig.version
-            + "&man=" + eventConfig.actionName
-            + "&r=" + "http%3A%2F%2Ftest.test.com%3Fb%3Dh";
-
-        var result = userInQueueService.validateCancelRequest(url, eventConfig, "testCustomer", key);
+        const url = "http://test.test.com?b=h";
+        const result = userInQueueService.validateCancelRequest(url, eventConfig, "testCustomer", key);
 
         assert(Object.keys(userInQueueStateCookieRepositoryMock.cancelQueueCookieCall).length > 0);
         assert(Object.keys(userInQueueStateCookieRepositoryMock.storeCall).length === 0);
         assert(result.doRedirect());
         assert(result.eventId === 'e1');
         assert(result.queueId === "queueid");
-        assert(result.redirectUrl === expectedUrl);
         assert(result.actionName === 'Cancel');
+        assertUrlMatches(result.redirectUrl, "https://testDomain.com/cancel/testCustomer/e1/", {
+            c: 'testCustomer',
+            e: 'e1',
+            ver: SDK_VERSION,
+            cver: eventConfig.version,
+            man: eventConfig.actionName,
+            r: "http%3A%2F%2Ftest.test.com%3Fb%3Dh"
+        });
     },
     test_getIgnoreResult: function () {
         userInQueueStateCookieRepositoryMock.reset();
@@ -468,7 +518,7 @@ var UserInQueueServiceTest = {
     }
 };
 
-for (var f in UserInQueueServiceTest) {
+for (let f in UserInQueueServiceTest) {
     console.log(f);
     UserInQueueServiceTest[f]();
 }

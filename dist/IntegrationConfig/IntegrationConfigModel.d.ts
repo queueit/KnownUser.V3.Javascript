@@ -2,6 +2,9 @@ export declare class IntegrationConfigModel {
     Name: string;
     EventId: string;
     CookieDomain: string;
+    IsCookieHttpOnly: boolean;
+    IsCookieSecure: boolean;
+    CookieSameSiteValue: string | null;
     LayoutName: string;
     Culture: string;
     ExtendCookieValidity: boolean | null;

@@ -1,6 +1,9 @@
 var QueueITHelpers = require('./../dist/QueueITHelpers')
 
 var assert = require('assert');
+const chai = require('chai');
+chai.use(require('chai-string'));
+const expect = require('chai').expect;
 
 var QueueParameterHelperTest = {
     test_tryExtractQueueParams: function () {

@@ -1,7 +1,6 @@
 var IntegrationConfig = require('../dist/IntegrationConfig/IntegrationConfigModel')
 var IntegrationConfigHelpers = require('../dist/IntegrationConfig/IntegrationConfigHelpers')
-
-
+const expect = require('chai').expect;
 
 var assert = require('assert');
 

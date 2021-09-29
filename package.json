@@ -1,14 +1,25 @@
 {
   "name": "queueit-knownuser",
-  "version": "3.6.4",
+  "version": "3.7.0",
   "description": "SDK to integrate Queue-it into a javascript based server side application.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "repository": "https://github.com/queueit/KnownUser.V3.Javascript",
   "scripts": {
     "prepare": "npm run build",
-    "build": "tsc"
+    "build": "tsc && npm run browserify",
+    "browserify": "browserify . -s QueueIT.KnownUserV3.SDK -o dist/browserified.js",
+    "test": "mocha --recursive"
   },
   "keywords": [],
   "author": "QueueIT",
-  "license": "GNU Lesser General Public License v3.0"
+  "license": "MIT",
+  "devDependencies": {
+    "browserify": "^17.0.0",
+    "chai": "^4.3.4",
+    "chai-string": "^1.5.0",
+    "mocha": "^9.0.1",
+    "ts-node": "^10.2.0",
+    "typescript": "^4.3.5"
+  }
 }

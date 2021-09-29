@@ -8,7 +8,14 @@ export interface IHttpRequest {
     }
 
     export interface IHttpResponse {
-        setCookie(cookieName: string, cookieValue: string, domain: string, expiration);
+        setCookie(
+            cookieName: string,
+            cookieValue: string,
+            domain: string,
+            expiration: number,
+            httpOnly: boolean,
+            isSecure: boolean,
+            sameSiteValue: string);
     }
 
     export interface IHttpContextProvider {

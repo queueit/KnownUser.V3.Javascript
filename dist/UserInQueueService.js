@@ -8,7 +8,7 @@ var UserInQueueService = /** @class */ (function () {
         this.userInQueueStateRepository = userInQueueStateRepository;
     }
     UserInQueueService.prototype.getValidTokenResult = function (config, queueParams, secretKey) {
-        this.userInQueueStateRepository.store(config.eventId, queueParams.queueId, queueParams.cookieValidityMinutes, config.cookieDomain, queueParams.redirectType, secretKey);
+        this.userInQueueStateRepository.store(config.eventId, queueParams.queueId, queueParams.cookieValidityMinutes, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure, config.cookieSameSiteValue, queueParams.redirectType, secretKey);
         return new Models_1.RequestValidationResult(Models_1.ActionTypes.QueueAction, config.eventId, queueParams.queueId, null, queueParams.redirectType, config.actionName);
     };
     UserInQueueService.prototype.getErrorResult = function (customerId, targetUrl, config, qParams, errorCode) {
@@ -42,19 +42,18 @@ var UserInQueueService = /** @class */ (function () {
     UserInQueueService.prototype.generateRedirectUrl = function (queueDomain, uriPath, query) {
         if (!QueueITHelpers_1.Utils.endsWith(queueDomain, "/"))
             queueDomain = queueDomain + "/";
-        var redirectUrl = "https://" + queueDomain + uriPath + "?" + query;
-        return redirectUrl;
+        return "https://" + queueDomain + uriPath + "?" + query;
     };
     UserInQueueService.prototype.validateQueueRequest = function (targetUrl, queueitToken, config, customerId, secretKey) {
         var state = this.userInQueueStateRepository.getState(config.eventId, config.cookieValidityMinute, secretKey, true);
         if (state.isValid) {
             if (state.isStateExtendable() && config.extendCookieValidity) {
-                this.userInQueueStateRepository.store(config.eventId, state.queueId, null, config.cookieDomain, state.redirectType, secretKey);
+                this.userInQueueStateRepository.store(config.eventId, state.queueId, null, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure, config.cookieSameSiteValue, state.redirectType, secretKey);
             }
             return new Models_1.RequestValidationResult(Models_1.ActionTypes.QueueAction, config.eventId, state.queueId, null, state.redirectType, config.actionName);
         }
         var queueParams = QueueITHelpers_1.QueueParameterHelper.extractQueueParams(queueitToken);
-        var requestValidationResult = null;
+        var requestValidationResult;
         var isTokenValid = false;
         if (queueParams != null) {
             var tokenValidationResult = this.validateToken(config, queueParams, secretKey);
@@ -70,7 +69,7 @@ var UserInQueueService = /** @class */ (function () {
             requestValidationResult = this.getQueueResult(targetUrl, config, customerId);
         }
         if (state.isFound && !isTokenValid) {
-            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain);
+            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure, config.cookieSameSiteValue);
         }
         return requestValidationResult;
     };
@@ -78,10 +77,13 @@ var UserInQueueService = /** @class */ (function () {
         //we do not care how long cookie is valid while canceling cookie
         var state = this.userInQueueStateRepository.getState(config.eventId, -1, secretKey, false);
         if (state.isValid) {
-            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain);
+            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure, config.cookieSameSiteValue);
             var query = this.getQueryString(customerId, config.eventId, config.version, null, null, config.actionName) +
                 (targetUrl ? "&r=" + QueueITHelpers_1.Utils.encodeUrl(targetUrl) : "");
-            var uriPath = "cancel/" + customerId + "/" + config.eventId + "/";
+            var uriPath = "cancel/" + customerId + "/" + config.eventId;
+            if (state.queueId) {
+                uriPath += "/" + state.queueId;
+            }
             var redirectUrl = this.generateRedirectUrl(config.queueDomain, uriPath, query);
             return new Models_1.RequestValidationResult(Models_1.ActionTypes.CancelAction, config.eventId, state.queueId, redirectUrl, state.redirectType, config.actionName);
         }
@@ -105,7 +107,7 @@ var UserInQueueService = /** @class */ (function () {
             return new TokenValidationResult(false, "timestamp");
         return new TokenValidationResult(true, null);
     };
-    UserInQueueService.SDK_VERSION = "v3-javascript-" + "3.6.4";
+    UserInQueueService.SDK_VERSION = "v3-javascript-" + "3.7.0";
     return UserInQueueService;
 }());
 exports.UserInQueueService = UserInQueueService;
@@ -116,3 +118,4 @@ var TokenValidationResult = /** @class */ (function () {
     }
     return TokenValidationResult;
 }());
+//# sourceMappingURL=UserInQueueService.js.map

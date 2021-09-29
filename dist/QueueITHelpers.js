@@ -132,8 +132,7 @@ var CookieHelper = /** @class */ (function () {
             var keyVal = cookieValues_1[_i];
             values.push(keyVal.key + "=" + keyVal.value);
         }
-        var result = values.join("&");
-        return result;
+        return values.join("&");
     };
     return CookieHelper;
 }());
@@ -179,3 +178,4 @@ var ConnectorDiagnostics = /** @class */ (function () {
     return ConnectorDiagnostics;
 }());
 exports.ConnectorDiagnostics = ConnectorDiagnostics;
+//# sourceMappingURL=QueueITHelpers.js.map

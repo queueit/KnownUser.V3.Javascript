@@ -8,13 +8,16 @@ export declare class UserInQueueStateCookieRepository {
     private static readonly _EventIdKey;
     private static readonly _RedirectTypeKey;
     private static readonly _FixedCookieValidityMinutesKey;
+    private static readonly _IsCookieHttpOnly;
+    private static readonly _IsCookieSecure;
+    private static readonly _CookieSameSiteValue;
     constructor(httpContextProvider: IHttpContextProvider);
     static getCookieKey(eventId: string): string;
-    store(eventId: string, queueId: string, fixedCookieValidityMinutes: number | null, cookieDomain: string, redirectType: string, secretKey: string): void;
+    store(eventId: string, queueId: string, fixedCookieValidityMinutes: number | null, cookieDomain: string, isHttpOnly: boolean, isSecure: boolean, sameSiteValue: string, redirectType: string, secretKey: string): void;
     private createCookie;
     getState(eventId: string, cookieValidityMinutes: number, secretKey: string, validateTime: boolean): StateInfo;
     private isCookieValid;
-    cancelQueueCookie(eventId: string, cookieDomain: string): void;
+    cancelQueueCookie(eventId: string, cookieDomain: string, isCookieHttpOnly: boolean, isSecure: boolean, sameSiteValue: string): void;
     reissueQueueCookie(eventId: string, cookieValidityMinutes: number, cookieDomain: string, secretKey: string): void;
     private generateHash;
 }

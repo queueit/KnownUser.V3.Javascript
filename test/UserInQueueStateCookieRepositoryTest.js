@@ -1,9 +1,9 @@
-﻿var QueueITHelpers = require('./../dist/QueueITHelpers')
-var UserInQueueStateCookieRepository = require('./../dist/UserInQueueStateCookieRepository')
+﻿let QueueITHelpers = require('./../dist/QueueITHelpers')
+let UserInQueueStateCookieRepository = require('./../dist/UserInQueueStateCookieRepository')
+let assert = require('assert');
+let utils = QueueITHelpers.Utils;
+const expect = require('chai').expect;
 
-var assert = require('assert');
-
-var utils = QueueITHelpers.Utils;
 utils.generateSHA256Hash = function (secretKey, stringToHash) {
     const crypto = require('crypto');
     const hash = crypto.createHmac('sha256', secretKey)
@@ -16,10 +16,10 @@ function generateHash(eventId, queueId, fixedCookieValidityMinutes, redirectType
     return utils.generateSHA256Hash(secretKey, eventId + queueId + (fixedCookieValidityMinutes ? fixedCookieValidityMinutes : "") + redirectType + issueTime);
 }
 
-var mockCookies = {};
-var httpContextProvider = {
+let mockCookies = {};
+let httpContextProvider = {
     getHttpRequest: function () {
-        var httpRequest = {
+        let httpRequest = {
             getCookieValue: function (name) {
                 if (mockCookies[name]) {
                     return mockCookies[name].value;
@@ -30,35 +30,123 @@ var httpContextProvider = {
         return httpRequest;
     },
     getHttpResponse: function () {
-        var httpResponse = {
-            setCookie: function (name, value, domain, expire) {
-                mockCookies[name] = { name: name, value: value, expire: expire, domain: domain };
+        let httpResponse = {
+            setCookie: function (name, value, domain, expire, httpOnly, isSecure, sameSiteValue) {
+                mockCookies[name] = {
+                    name,
+                    value,
+                    expire,
+                    domain,
+                    httpOnly,
+                    isSecure,
+                    sameSiteValue
+                };
             }
         };
         return httpResponse;
     }
 };
-var userInQueueStateCookieRepository = new UserInQueueStateCookieRepository.UserInQueueStateCookieRepository(httpContextProvider);
+let userInQueueStateCookieRepository = new UserInQueueStateCookieRepository.UserInQueueStateCookieRepository(httpContextProvider);
 
-var UserInQueueStateCookieRepositoryTest = {
-    test_store_hasValidState_ExtendableCookie_CookieIsSaved: function () {
+let UserInQueueStateCookieRepositoryTest = {
+    test_store_givenCookieFlags_Then_CookieIsSavedWithTheFlagsSet: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var cookieValidity = 10;
+        const eventId = "event1";
+        const secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        const cookieDomain = ".test.com";
+        const queueId = "queueId";
+        const cookieValidity = 10;
+        const cookieIsHttpOnly = true;
+        const cookieIsSecure = true;
+        const cookieSameSiteValue = 'Strict';
 
-        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, "queue", secretKey);
-        var state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        userInQueueStateCookieRepository.store(
+            eventId,
+            queueId,
+            null,
+            cookieDomain,
+            cookieIsHttpOnly,
+            cookieIsSecure,
+            cookieSameSiteValue,
+            "queue",
+            secretKey);
+        const state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
 
         assert(state.isValid);
         assert(state.queueId === queueId);
         assert(state.isStateExtendable());
         assert(state.redirectType === "queue");
 
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let actualCookie = mockCookies[cookieKey];
+        expect(actualCookie).to.not.be.null;
+        assert(actualCookie.expire - QueueITHelpers.Utils.getCurrentTime() - 24 * 60 * 60 < 1000);
+        assert(actualCookie.domain === cookieDomain);
+        expect(actualCookie.httpOnly).to.be.true;
+        expect(actualCookie.isSecure).to.be.true;
+        expect(actualCookie.sameSiteValue).to.be.equal('Strict');
+    },
+
+    test_store_isCookieHttpOnlyNotSet_Then_HttpOnly_Should_NotBeSet: function () {
+        mockCookies = {}; // reset
+
+        const eventId = "event1";
+        const secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        const cookieDomain = ".test.com";
+        const queueId = "queueId";
+        const cookieValidity = 10;
+        const isCookieHttpOnly = undefined;
+        const isCookieSecure = undefined;
+        const cookieSameSiteValue = undefined;
+
+        userInQueueStateCookieRepository.store(
+            eventId,
+            queueId,
+            null,
+            cookieDomain,
+            isCookieHttpOnly,
+            isCookieSecure,
+            cookieSameSiteValue,
+            "queue",
+            secretKey);
+        const state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+
+        assert(state.isValid);
+        assert(state.queueId === queueId);
+        assert(state.isStateExtendable());
+        assert(state.redirectType === "queue");
+
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let actualCookie = mockCookies[cookieKey];
+        assert(actualCookie !== null);
+        assert(actualCookie.expire - QueueITHelpers.Utils.getCurrentTime() - 24 * 60 * 60 < 1000);
+        assert(actualCookie.domain === cookieDomain);
+        expect(actualCookie.httpOnly).to.be.false;
+        expect(actualCookie.isSecure).to.be.false;
+        expect(actualCookie.sameSiteValue).to.be.undefined;
+    },
+    test_store_hasValidState_ExtendableCookie_CookieIsSaved: function () {
+        mockCookies = {}; // reset
+
+        let eventId = "event1";
+        let secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        let cookieDomain = ".test.com";
+        let queueId = "queueId";
+        let cookieValidity = 10;
+        const isCookieHttpOnly = false;
+        const isCookieSecure = false;
+        const isCookieSameSiteValue = false;
+
+        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, isCookieSameSiteValue, "queue", secretKey);
+        let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+
+        assert(state.isValid);
+        assert(state.queueId === queueId);
+        assert(state.isStateExtendable());
+        assert(state.redirectType === "queue");
+
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
         assert(mockCookies[cookieKey] !== null);
         assert(mockCookies[cookieKey].expire - QueueITHelpers.Utils.getCurrentTime() - 24 * 60 * 60 < 1000);
         assert(mockCookies[cookieKey].domain === cookieDomain);
@@ -66,14 +154,17 @@ var UserInQueueStateCookieRepositoryTest = {
     test_store_hasValidState_nonExtendableCookie_CookieIsSaved: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var cookieValidity = 3;
+        let eventId = "event1";
+        let secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        let cookieDomain = ".test.com";
+        let queueId = "queueId";
+        let cookieValidity = 3;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, cookieValidity, cookieDomain, "idle", secretKey);
-        var state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        const isCookieHttpOnly = false;
+        const isCookieSecure = false;
+        const cookieSameSiteValue = 'Lax';
+        userInQueueStateCookieRepository.store(eventId, queueId, cookieValidity, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "idle", secretKey);
+        let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
 
         assert(state.isValid);
         assert(state.queueId === queueId);
@@ -81,131 +172,151 @@ var UserInQueueStateCookieRepositoryTest = {
         assert(state.redirectType === "idle");
         assert(state.fixedCookieValidityMinutes === 3);
 
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
         assert(mockCookies[cookieKey] !== null);
         assert(mockCookies[cookieKey].expire - QueueITHelpers.Utils.getCurrentTime() - 24 * 60 * 60 < 100);
         assert(mockCookies[cookieKey].domain === cookieDomain);
+        expect(mockCookies[cookieKey].isSecure).to.be.false;
+        expect(mockCookies[cookieKey].sameSiteValue).to.be.equal('Lax');
     },
     test_store_hasValidState_tamperedCookie_stateIsNotValid_isCookieExtendable: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var cookieValidity = 10;
+        let eventId = "event1";
+        let secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        let cookieDomain = ".test.com";
+        let queueId = "queueId";
+        let cookieValidity = 10;
+        const isCookieHttpOnly = false;
+        const isCookieSecure = false;
+        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, 3, cookieDomain, "Idle", secretKey);
-        var state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        userInQueueStateCookieRepository.store(eventId, queueId, 3, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Idle", secretKey);
+        let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid);
 
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
-        var oldCookieValue = mockCookies[cookieKey].value;
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let oldCookieValue = mockCookies[cookieKey].value;
 
         mockCookies[cookieKey].value = oldCookieValue.replace("FixedValidityMins=3", "FixedValidityMins=10");
-        var state2 = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
-        assert(state2.isValid === false);
-        assert(state.isStateExtendable() === false);
+        let state2 = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        expect(state2.isValid).to.be.false;
+        expect(state.isStateExtendable()).to.be.false;
     },
     test_store_hasValidState_tamperedCookie_stateIsNotValid_eventId: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var cookieValidity = 10;
+        const eventId = "event1";
+        const secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        const cookieDomain = ".test.com";
+        const queueId = "queueId";
+        const cookieValidity = 10;
+        const isCookieHttpOnly = false;
+        const isCookieSecure = false
+        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, 3, cookieDomain, "Idle", secretKey);
-        var state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        userInQueueStateCookieRepository.store(eventId, queueId, 3, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Idle", secretKey);
+        let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid);
 
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
-        var oldCookieValue = mockCookies[cookieKey].value;
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let oldCookieValue = mockCookies[cookieKey].value;
         mockCookies[cookieKey].value = oldCookieValue.replace("EventId=event1", "EventId=event2");
 
-        var state2 = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        let state2 = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state2.isValid === false);
         assert(state.isStateExtendable() === false);
     },
     test_store_hasValidState_expiredCookie_stateIsNotValid: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var cookieValidity = -1;
+        const eventId = "event1";
+        const secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        const cookieDomain = ".test.com";
+        const queueId = "queueId";
+        const cookieValidity = -1;
+        const isCookieHttpOnly = false;
+        const isCookieSecure = false
+        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, "idle", secretKey);
-        var state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "idle", secretKey);
+        let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid === false);
     },
     test_store_hasValidState_differentEventId_stateIsNotValid: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var cookieValidity = 10;
+        const eventId = "event1";
+        const secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        const cookieDomain = ".test.com";
+        const queueId = "queueId";
+        const cookieValidity = 10;
+        const isCookieHttpOnly = false;
+        const isCookieSecure = false
+        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, "Queue", secretKey);
-        var state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Queue", secretKey);
+        let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid);
 
-        var state2 = userInQueueStateCookieRepository.getState("event2", cookieValidity, secretKey, true);
+        let state2 = userInQueueStateCookieRepository.getState("event2", cookieValidity, secretKey, true);
         assert(state2.isValid === false);
     },
     test_hasValidState_noCookie_stateIsNotValid: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var cookieKey = "key";
-        var cookieValidity = 10;
+        let eventId = "event1";
+        let secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        let cookieDomain = ".test.com";
+        let queueId = "queueId";
+        let cookieKey = "key";
+        let cookieValidity = 10;
 
-        var state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid === false);
     },
     test_hasValidState_invalidCookie_stateIsNotValid: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var cookieValidity = 10;
+        const eventId = "event1";
+        const secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        const cookieDomain = ".test.com";
+        const queueId = "queueId";
+        const cookieValidity = 10;
+        const isCookieHttpOnly = false;
+        const isCookieSecure = false
+        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, 20, cookieDomain, "Queue", secretKey);
-        var state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        userInQueueStateCookieRepository.store(eventId, queueId, 20, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Queue", secretKey);
+        let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid);
 
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
         mockCookies[cookieKey].value = "IsCookieExtendable=ooOOO&Expires=|||&QueueId=000&Hash=23232";
-        var state2 = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        let state2 = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state2.isValid === false);
     },
     test_cancelQueueCookie: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var cookieValidity = 20;
+        const eventId = "event1";
+        const secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        const cookieDomain = ".test.com";
+        const queueId = "queueId";
+        const cookieValidity = 20;
+        const isCookieHttpOnly = false;
+        const isCookieSecure = false
+        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, 20, cookieDomain, "Queue", secretKey);
-        var state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        userInQueueStateCookieRepository.store(eventId, queueId, 20, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Queue", secretKey);
+        let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid);
 
         userInQueueStateCookieRepository.cancelQueueCookie(eventId, cookieDomain);
-        var state2 = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
+        let state2 = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state2.isValid === false);
 
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
         assert(mockCookies[cookieKey] !== null);
         assert(mockCookies[cookieKey].expire === 0);
         assert(mockCookies[cookieKey].domain === cookieDomain);
@@ -214,16 +325,19 @@ var UserInQueueStateCookieRepositoryTest = {
     test_extendQueueCookie_cookieExist: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        const eventId = "event1";
+        const secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        const cookieDomain = ".test.com";
+        const queueId = "queueId";
+        const cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        const isCookieHttpOnly = false;
+        const isCookieSecure = false
+        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, "Queue", secretKey);
+        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Queue", secretKey);
         userInQueueStateCookieRepository.reissueQueueCookie(eventId, 12, cookieDomain, secretKey);
 
-        var state = userInQueueStateCookieRepository.getState(eventId, 5, secretKey, true);
+        let state = userInQueueStateCookieRepository.getState(eventId, 5, secretKey, true);
         assert(state.isValid);
         assert(state.queueId === queueId);
         assert(state.isStateExtendable());
@@ -233,30 +347,33 @@ var UserInQueueStateCookieRepositoryTest = {
     test_extendQueueCookie_cookieDoesNotExist: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
+        const eventId = "event1";
+        const secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        const cookieDomain = ".test.com";
+        const queueId = "queueId";
+        const isCookieHttpOnly = false;
+        const isCookieSecure = false
+        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store("event2", queueId, 20, cookieDomain, "Queue", secretKey);
+        userInQueueStateCookieRepository.store("event2", queueId, 20, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Queue", secretKey);
         userInQueueStateCookieRepository.reissueQueueCookie(eventId, 12, cookieDomain, secretKey);
 
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey("event2");
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey("event2");
         assert(mockCookies[cookieKey] !== null);
     },
     test_getState_validCookieFormat_extendable: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var issueTime = QueueITHelpers.Utils.getCurrentTime();
-        var hash = generateHash(eventId, queueId, null, "queue", issueTime, secretKey);
+        let eventId = "event1";
+        let secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        let cookieDomain = ".test.com";
+        let queueId = "queueId";
+        let issueTime = QueueITHelpers.Utils.getCurrentTime();
+        let hash = generateHash(eventId, queueId, null, "queue", issueTime, secretKey);
 
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
         httpContextProvider.getHttpResponse().setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&RedirectType=queue&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + 24 * 60 * 60, cookieDomain);
-        var state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
+        let state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
 
         assert(state.isStateExtendable());
         assert(state.isValid);
@@ -265,46 +382,46 @@ var UserInQueueStateCookieRepositoryTest = {
         assert(state.redirectType === "queue");
     },
     test_getState_oldCookie_invalid_expiredCookie_extendable: function () {
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
-        var issueTime = QueueITHelpers.Utils.getCurrentTime() - 11 * 60;
-        var hash = generateHash(eventId, queueId, null, "queue", issueTime, secretKey);
+        let eventId = "event1";
+        let secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        let cookieDomain = ".test.com";
+        let queueId = "queueId";
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let issueTime = QueueITHelpers.Utils.getCurrentTime() - 11 * 60;
+        let hash = generateHash(eventId, queueId, null, "queue", issueTime, secretKey);
 
         httpContextProvider.getHttpResponse().setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&RedirectType=queue&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + 24 * 60 * 60, cookieDomain);
-        var state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
+        let state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
 
         assert(state.isValid === false);
         assert(state.isFound);
     },
     test_getState_oldCookie_invalid_expiredCookie_nonExtendable: function () {
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var issueTime = QueueITHelpers.Utils.getCurrentTime() - 4 * 60;
-        var hash = generateHash(eventId, queueId, 3, "idle", issueTime, secretKey);
+        let eventId = "event1";
+        let secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        let cookieDomain = ".test.com";
+        let queueId = "queueId";
+        let issueTime = QueueITHelpers.Utils.getCurrentTime() - 4 * 60;
+        let hash = generateHash(eventId, queueId, 3, "idle", issueTime, secretKey);
 
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
         httpContextProvider.getHttpResponse().setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&FixedValidityMins=3&RedirectType=idle&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + (24 * 60 * 60), cookieDomain);
-        var state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
+        let state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
 
         assert(state.isValid === false);
         assert(state.isFound);
     },
     test_getState_validCookieFormat_nonExtendable: function () {
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        var cookieDomain = ".test.com";
-        var queueId = "queueId";
-        var issueTime = QueueITHelpers.Utils.getCurrentTime();
-        var hash = generateHash(eventId, queueId, 3, "idle", issueTime, secretKey);
+        let eventId = "event1";
+        let secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+        let cookieDomain = ".test.com";
+        let queueId = "queueId";
+        let issueTime = QueueITHelpers.Utils.getCurrentTime();
+        let hash = generateHash(eventId, queueId, 3, "idle", issueTime, secretKey);
 
-        var cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
+        let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
         httpContextProvider.getHttpResponse().setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&FixedValidityMins=3&RedirectType=idle&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + (24 * 60 * 60), cookieDomain);
-        var state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
+        let state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
 
         assert(state.isStateExtendable() === false);
         assert(state.isValid);
@@ -315,14 +432,14 @@ var UserInQueueStateCookieRepositoryTest = {
     test_getState_NoCookie: function () {
         mockCookies = {}; // reset
 
-        var eventId = "event1";
-        var secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
-        
-        var state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
+        let eventId = "event1";
+        let secretKey = "4e1deweb821-a82ew5-49da-acdqq0-5d3476f2068db";
+
+        let state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
 
         assert(!state.isFound);
         assert(!state.isValid);
-     }
+    }
 };
 
 for (var f in UserInQueueStateCookieRepositoryTest) {

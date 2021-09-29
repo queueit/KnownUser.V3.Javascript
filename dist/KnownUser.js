@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -61,7 +61,8 @@ var KnownUser = /** @class */ (function () {
         }
         if (!cookieValue)
             return;
-        httpContextProvider.getHttpResponse().setCookie(this.QueueITDebugKey, cookieValue, null, QueueITHelpers_1.Utils.getCurrentTime() + 20 * 60); // now + 20 mins
+        httpContextProvider.getHttpResponse().setCookie(this.QueueITDebugKey, cookieValue, null, QueueITHelpers_1.Utils.getCurrentTime() + 20 * 60, // now + 20 mins
+        false, false, null);
     };
     KnownUser._resolveQueueRequestByLocalConfig = function (targetUrl, queueitToken, queueConfig, customerId, secretKey, httpContextProvider, debugEntries, isDebug) {
         if (isDebug) {
@@ -117,7 +118,7 @@ var KnownUser = /** @class */ (function () {
         return result;
     };
     KnownUser.handleQueueAction = function (currentUrlWithoutQueueITToken, queueitToken, customerIntegrationInfo, customerId, secretKey, matchedConfig, httpContextProvider, debugEntries, isDebug) {
-        var targetUrl = "";
+        var targetUrl;
         switch (matchedConfig.RedirectLogic) {
             case "ForcedTargetUrl":
                 targetUrl = matchedConfig.ForcedTargetUrl;
@@ -129,11 +130,11 @@ var KnownUser = /** @class */ (function () {
                 targetUrl = this.generateTargetUrl(currentUrlWithoutQueueITToken, httpContextProvider);
                 break;
         }
-        var queueEventConfig = new Models_1.QueueEventConfig(matchedConfig.EventId, matchedConfig.LayoutName, matchedConfig.Culture, matchedConfig.QueueDomain, matchedConfig.ExtendCookieValidity, matchedConfig.CookieValidityMinute, matchedConfig.CookieDomain, customerIntegrationInfo.Version, matchedConfig.Name);
+        var queueEventConfig = new Models_1.QueueEventConfig(matchedConfig.EventId, matchedConfig.LayoutName, matchedConfig.Culture, matchedConfig.QueueDomain, matchedConfig.ExtendCookieValidity, matchedConfig.CookieValidityMinute, matchedConfig.CookieDomain, matchedConfig.IsCookieHttpOnly, matchedConfig.IsCookieSecure, matchedConfig.CookieSameSiteValue, customerIntegrationInfo.Version, matchedConfig.Name);
         return this._resolveQueueRequestByLocalConfig(targetUrl, queueitToken, queueEventConfig, customerId, secretKey, httpContextProvider, debugEntries, isDebug);
     };
     KnownUser.handleCancelAction = function (currentUrlWithoutQueueITToken, queueitToken, customerIntegrationInfo, customerId, secretKey, matchedConfig, httpContextProvider, debugEntries, isDebug) {
-        var cancelEventConfig = new Models_1.CancelEventConfig(matchedConfig.EventId, matchedConfig.QueueDomain, matchedConfig.CookieDomain, customerIntegrationInfo.Version, matchedConfig.Name);
+        var cancelEventConfig = new Models_1.CancelEventConfig(matchedConfig.EventId, matchedConfig.QueueDomain, matchedConfig.CookieDomain, matchedConfig.IsCookieHttpOnly, matchedConfig.IsCookieSecure, matchedConfig.CookieSameSiteValue, customerIntegrationInfo.Version, matchedConfig.Name);
         var targetUrl = this.generateTargetUrl(currentUrlWithoutQueueITToken, httpContextProvider);
         return this._cancelRequestByLocalConfig(targetUrl, queueitToken, cancelEventConfig, customerId, secretKey, httpContextProvider, debugEntries, isDebug);
     };
@@ -245,3 +246,4 @@ var KnownUser = /** @class */ (function () {
     return KnownUser;
 }());
 exports.KnownUser = KnownUser;
+//# sourceMappingURL=KnownUser.js.map

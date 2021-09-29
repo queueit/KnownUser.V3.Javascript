@@ -50,7 +50,7 @@ export class KnownUser {
         debugEntries,
         httpContextProvider: IHttpContextProvider) {
         let cookieValue = "";
-        for (var key in debugEntries) {
+        for (let key in debugEntries) {
             cookieValue += key + "=" + debugEntries[key] + "|";
         }
 
@@ -65,7 +65,10 @@ export class KnownUser {
             this.QueueITDebugKey,
             cookieValue,
             null,
-            Utils.getCurrentTime() + 20 * 60); // now + 20 mins
+            Utils.getCurrentTime() + 20 * 60, // now + 20 mins
+            false,
+            false,
+            null);
     }
 
     private static _resolveQueueRequestByLocalConfig(
@@ -152,14 +155,16 @@ export class KnownUser {
     }
 
     private static handleQueueAction(
-        currentUrlWithoutQueueITToken: string, queueitToken: string,
-        customerIntegrationInfo: IntegrationConfig.CustomerIntegration, customerId: string,
+        currentUrlWithoutQueueITToken: string,
+        queueitToken: string,
+        customerIntegrationInfo: IntegrationConfig.CustomerIntegration,
+        customerId: string,
         secretKey: string,
         matchedConfig: IntegrationConfig.IntegrationConfigModel,
         httpContextProvider: IHttpContextProvider,
-        debugEntries,
+        debugEntries: object,
         isDebug: boolean): RequestValidationResult {
-        var targetUrl = "";
+        let targetUrl: string;
         switch (matchedConfig.RedirectLogic) {
             case "ForcedTargetUrl":
                 targetUrl = matchedConfig.ForcedTargetUrl;
@@ -172,7 +177,7 @@ export class KnownUser {
                 break;
         }
 
-        var queueEventConfig = new QueueEventConfig(
+        const queueEventConfig = new QueueEventConfig(
             matchedConfig.EventId,
             matchedConfig.LayoutName,
             matchedConfig.Culture,
@@ -180,6 +185,9 @@ export class KnownUser {
             matchedConfig.ExtendCookieValidity,
             matchedConfig.CookieValidityMinute,
             matchedConfig.CookieDomain,
+            matchedConfig.IsCookieHttpOnly,
+            matchedConfig.IsCookieSecure,
+            matchedConfig.CookieSameSiteValue,
             customerIntegrationInfo.Version,
             matchedConfig.Name
         );
@@ -195,23 +203,26 @@ export class KnownUser {
         httpContextProvider: IHttpContextProvider,
         debugEntries,
         isDebug: boolean): RequestValidationResult {
-        var cancelEventConfig = new CancelEventConfig(
+        const cancelEventConfig = new CancelEventConfig(
             matchedConfig.EventId,
             matchedConfig.QueueDomain,
             matchedConfig.CookieDomain,
+            matchedConfig.IsCookieHttpOnly,
+            matchedConfig.IsCookieSecure,
+            matchedConfig.CookieSameSiteValue,
             customerIntegrationInfo.Version,
             matchedConfig.Name
         );
 
-        var targetUrl = this.generateTargetUrl(currentUrlWithoutQueueITToken, httpContextProvider);
+        const targetUrl = this.generateTargetUrl(currentUrlWithoutQueueITToken, httpContextProvider);
         return this._cancelRequestByLocalConfig(targetUrl, queueitToken, cancelEventConfig, customerId, secretKey, httpContextProvider, debugEntries, isDebug);
     }
 
     private static handleIgnoreAction(
         httpContextProvider: IHttpContextProvider,
         actionName: string) {
-        var userInQueueService = this.getUserInQueueService(httpContextProvider);
-        var result = userInQueueService.getIgnoreResult(actionName);
+        const userInQueueService = this.getUserInQueueService(httpContextProvider);
+        const result = userInQueueService.getIgnoreResult(actionName);
         result.isAjaxResult = this.isQueueAjaxCall(httpContextProvider);
         return result;
     }
@@ -241,8 +252,8 @@ export class KnownUser {
         secretKey: string,
         httpContextProvider: IHttpContextProvider): RequestValidationResult {
 
-        var debugEntries = {};
-        var connectorDiagnostics = ConnectorDiagnostics.verify(customerId, secretKey, queueitToken);
+        const debugEntries = {};
+        const connectorDiagnostics = ConnectorDiagnostics.verify(customerId, secretKey, queueitToken);
 
         if (connectorDiagnostics.hasError)
             return connectorDiagnostics.validationResult;

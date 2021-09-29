@@ -30,7 +30,7 @@ export declare class QueueParameterHelper {
     static extractQueueParams(queueitToken: string): QueueUrlParams;
 }
 export declare class CookieHelper {
-    static toMapFromValue(cookieValue: string): {};
+    static toMapFromValue(cookieValue: string): object;
     static toValueFromKeyValueCollection(cookieValues: Array<{
         key: string;
         value: string;
