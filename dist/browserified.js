@@ -333,7 +333,7 @@ var KnownUser = /** @class */ (function () {
     }
     KnownUser.getUserInQueueService = function (httpContextProvider) {
         if (!this.UserInQueueService) {
-            return new UserInQueueService_1.UserInQueueService(new UserInQueueStateCookieRepository_1.UserInQueueStateCookieRepository(httpContextProvider));
+            return new UserInQueueService_1.UserInQueueService(httpContextProvider, new UserInQueueStateCookieRepository_1.UserInQueueStateCookieRepository(httpContextProvider));
         }
         return this.UserInQueueService;
     };
@@ -365,7 +365,7 @@ var KnownUser = /** @class */ (function () {
         if (!cookieValue)
             return;
         httpContextProvider.getHttpResponse().setCookie(this.QueueITDebugKey, cookieValue, null, QueueITHelpers_1.Utils.getCurrentTime() + 20 * 60, // now + 20 mins
-        false, false, null);
+        false, false);
     };
     KnownUser._resolveQueueRequestByLocalConfig = function (targetUrl, queueitToken, queueConfig, customerId, secretKey, httpContextProvider, debugEntries, isDebug) {
         if (isDebug) {
@@ -433,11 +433,11 @@ var KnownUser = /** @class */ (function () {
                 targetUrl = this.generateTargetUrl(currentUrlWithoutQueueITToken, httpContextProvider);
                 break;
         }
-        var queueEventConfig = new Models_1.QueueEventConfig(matchedConfig.EventId, matchedConfig.LayoutName, matchedConfig.Culture, matchedConfig.QueueDomain, matchedConfig.ExtendCookieValidity, matchedConfig.CookieValidityMinute, matchedConfig.CookieDomain, matchedConfig.IsCookieHttpOnly, matchedConfig.IsCookieSecure, matchedConfig.CookieSameSiteValue, customerIntegrationInfo.Version, matchedConfig.Name);
+        var queueEventConfig = new Models_1.QueueEventConfig(matchedConfig.EventId, matchedConfig.LayoutName, matchedConfig.Culture, matchedConfig.QueueDomain, matchedConfig.ExtendCookieValidity, matchedConfig.CookieValidityMinute, matchedConfig.CookieDomain, matchedConfig.IsCookieHttpOnly, matchedConfig.IsCookieSecure, customerIntegrationInfo.Version, matchedConfig.Name);
         return this._resolveQueueRequestByLocalConfig(targetUrl, queueitToken, queueEventConfig, customerId, secretKey, httpContextProvider, debugEntries, isDebug);
     };
     KnownUser.handleCancelAction = function (currentUrlWithoutQueueITToken, queueitToken, customerIntegrationInfo, customerId, secretKey, matchedConfig, httpContextProvider, debugEntries, isDebug) {
-        var cancelEventConfig = new Models_1.CancelEventConfig(matchedConfig.EventId, matchedConfig.QueueDomain, matchedConfig.CookieDomain, matchedConfig.IsCookieHttpOnly, matchedConfig.IsCookieSecure, matchedConfig.CookieSameSiteValue, customerIntegrationInfo.Version, matchedConfig.Name);
+        var cancelEventConfig = new Models_1.CancelEventConfig(matchedConfig.EventId, matchedConfig.QueueDomain, matchedConfig.CookieDomain, matchedConfig.IsCookieHttpOnly, matchedConfig.IsCookieSecure, customerIntegrationInfo.Version, matchedConfig.Name);
         var targetUrl = this.generateTargetUrl(currentUrlWithoutQueueITToken, httpContextProvider);
         return this._cancelRequestByLocalConfig(targetUrl, queueitToken, cancelEventConfig, customerId, secretKey, httpContextProvider, debugEntries, isDebug);
     };
@@ -556,7 +556,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ActionTypes = exports.KnownUserException = exports.RequestValidationResult = exports.CancelEventConfig = exports.QueueEventConfig = void 0;
 var QueueITHelpers_1 = require("./QueueITHelpers");
 var QueueEventConfig = /** @class */ (function () {
-    function QueueEventConfig(eventId, layoutName, culture, queueDomain, extendCookieValidity, cookieValidityMinute, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, version, actionName) {
+    function QueueEventConfig(eventId, layoutName, culture, queueDomain, extendCookieValidity, cookieValidityMinute, cookieDomain, isCookieHttpOnly, isCookieSecure, version, actionName) {
         if (actionName === void 0) { actionName = 'unspecified'; }
         this.eventId = eventId;
         this.layoutName = layoutName;
@@ -567,14 +567,12 @@ var QueueEventConfig = /** @class */ (function () {
         this.cookieDomain = cookieDomain;
         this.isCookieHttpOnly = isCookieHttpOnly;
         this.isCookieSecure = isCookieSecure;
-        this.cookieSameSiteValue = cookieSameSiteValue;
         this.version = version;
         this.actionName = actionName;
     }
     QueueEventConfig.prototype.getString = function () {
         return "EventId:" + this.eventId + "&Version:" + this.version + "&ActionName:" + this.actionName + "&QueueDomain:" + this.queueDomain +
             ("&CookieDomain:" + this.cookieDomain + "&IsCookieHttpOnly:" + this.isCookieHttpOnly + "&IsCookieSecure:" + this.isCookieSecure) +
-            ("&CookieSameSiteValue:" + this.cookieSameSiteValue) +
             ("&ExtendCookieValidity:" + this.extendCookieValidity) +
             ("&CookieValidityMinute:" + this.cookieValidityMinute + "&LayoutName:" + this.layoutName + "&Culture:" + this.culture);
     };
@@ -582,14 +580,13 @@ var QueueEventConfig = /** @class */ (function () {
 }());
 exports.QueueEventConfig = QueueEventConfig;
 var CancelEventConfig = /** @class */ (function () {
-    function CancelEventConfig(eventId, queueDomain, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, version, actionName) {
+    function CancelEventConfig(eventId, queueDomain, cookieDomain, isCookieHttpOnly, isCookieSecure, version, actionName) {
         if (actionName === void 0) { actionName = 'unspecified'; }
         this.eventId = eventId;
         this.queueDomain = queueDomain;
         this.cookieDomain = cookieDomain;
         this.isCookieHttpOnly = isCookieHttpOnly;
         this.isCookieSecure = isCookieSecure;
-        this.cookieSameSiteValue = cookieSameSiteValue;
         this.version = version;
         this.actionName = actionName;
     }
@@ -597,7 +594,6 @@ var CancelEventConfig = /** @class */ (function () {
         return "EventId:" + this.eventId + "&Version:" + this.version +
             ("&QueueDomain:" + this.queueDomain) +
             ("&CookieDomain:" + this.cookieDomain + "&IsCookieHttpOnly:" + this.isCookieHttpOnly + "&IsCookieSecure:" + this.isCookieSecure) +
-            ("&CookieSameSiteValue:" + this.cookieSameSiteValue) +
             ("&ActionName:" + this.actionName);
     };
     return CancelEventConfig;
@@ -736,6 +732,9 @@ var QueueParameterHelper = /** @class */ (function () {
                 case QueueParameterHelper.RedirectTypeKey:
                     result.redirectType = keyValueArr[1] || "";
                     break;
+                case QueueParameterHelper.HashedIPKey:
+                    result.hashedIp = keyValueArr[1] || "";
+                    break;
             }
         }
         var hashWithPrefix = "" + QueueParameterHelper.KeyValueSeparatorGroupChar + QueueParameterHelper.HashKey + QueueParameterHelper.KeyValueSeparatorChar + result.hashCode;
@@ -749,6 +748,7 @@ var QueueParameterHelper = /** @class */ (function () {
     QueueParameterHelper.EventIdKey = "e";
     QueueParameterHelper.QueueIdKey = "q";
     QueueParameterHelper.RedirectTypeKey = "rt";
+    QueueParameterHelper.HashedIPKey = 'hip';
     QueueParameterHelper.KeyValueSeparatorChar = '_';
     QueueParameterHelper.KeyValueSeparatorGroupChar = '~';
     return QueueParameterHelper;
@@ -833,11 +833,12 @@ exports.UserInQueueService = void 0;
 var QueueITHelpers_1 = require("./QueueITHelpers");
 var Models_1 = require("./Models");
 var UserInQueueService = /** @class */ (function () {
-    function UserInQueueService(userInQueueStateRepository) {
+    function UserInQueueService(httpContextProvider, userInQueueStateRepository) {
+        this.httpContextProvider = httpContextProvider;
         this.userInQueueStateRepository = userInQueueStateRepository;
     }
     UserInQueueService.prototype.getValidTokenResult = function (config, queueParams, secretKey) {
-        this.userInQueueStateRepository.store(config.eventId, queueParams.queueId, queueParams.cookieValidityMinutes, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure, config.cookieSameSiteValue, queueParams.redirectType, secretKey);
+        this.userInQueueStateRepository.store(config.eventId, queueParams.queueId, queueParams.cookieValidityMinutes, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure, queueParams.redirectType, secretKey);
         return new Models_1.RequestValidationResult(Models_1.ActionTypes.QueueAction, config.eventId, queueParams.queueId, null, queueParams.redirectType, config.actionName);
     };
     UserInQueueService.prototype.getErrorResult = function (customerId, targetUrl, config, qParams, errorCode) {
@@ -877,7 +878,7 @@ var UserInQueueService = /** @class */ (function () {
         var state = this.userInQueueStateRepository.getState(config.eventId, config.cookieValidityMinute, secretKey, true);
         if (state.isValid) {
             if (state.isStateExtendable() && config.extendCookieValidity) {
-                this.userInQueueStateRepository.store(config.eventId, state.queueId, null, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure, config.cookieSameSiteValue, state.redirectType, secretKey);
+                this.userInQueueStateRepository.store(config.eventId, state.queueId, null, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure, state.redirectType, secretKey);
             }
             return new Models_1.RequestValidationResult(Models_1.ActionTypes.QueueAction, config.eventId, state.queueId, null, state.redirectType, config.actionName);
         }
@@ -898,7 +899,7 @@ var UserInQueueService = /** @class */ (function () {
             requestValidationResult = this.getQueueResult(targetUrl, config, customerId);
         }
         if (state.isFound && !isTokenValid) {
-            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure, config.cookieSameSiteValue);
+            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure);
         }
         return requestValidationResult;
     };
@@ -906,7 +907,7 @@ var UserInQueueService = /** @class */ (function () {
         //we do not care how long cookie is valid while canceling cookie
         var state = this.userInQueueStateRepository.getState(config.eventId, -1, secretKey, false);
         if (state.isValid) {
-            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure, config.cookieSameSiteValue);
+            this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure);
             var query = this.getQueryString(customerId, config.eventId, config.version, null, null, config.actionName) +
                 (targetUrl ? "&r=" + QueueITHelpers_1.Utils.encodeUrl(targetUrl) : "");
             var uriPath = "cancel/" + customerId + "/" + config.eventId;
@@ -934,9 +935,16 @@ var UserInQueueService = /** @class */ (function () {
             return new TokenValidationResult(false, "eventid");
         if (queueParams.timeStamp < QueueITHelpers_1.Utils.getCurrentTime())
             return new TokenValidationResult(false, "timestamp");
+        var clientIp = this.httpContextProvider.getHttpRequest().getUserHostAddress();
+        if (queueParams.hashedIp && clientIp) {
+            var hashedIp = QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, clientIp);
+            if (hashedIp !== queueParams.hashedIp) {
+                return new TokenValidationResult(false, "ip");
+            }
+        }
         return new TokenValidationResult(true, null);
     };
-    UserInQueueService.SDK_VERSION = "v3-javascript-" + "3.7.0";
+    UserInQueueService.SDK_VERSION = "v3-javascript-" + "3.7.3";
     return UserInQueueService;
 }());
 exports.UserInQueueService = UserInQueueService;
@@ -960,12 +968,12 @@ var UserInQueueStateCookieRepository = /** @class */ (function () {
     UserInQueueStateCookieRepository.getCookieKey = function (eventId) {
         return UserInQueueStateCookieRepository._QueueITDataKey + "_" + eventId;
     };
-    UserInQueueStateCookieRepository.prototype.store = function (eventId, queueId, fixedCookieValidityMinutes, cookieDomain, isHttpOnly, isSecure, sameSiteValue, redirectType, secretKey) {
+    UserInQueueStateCookieRepository.prototype.store = function (eventId, queueId, fixedCookieValidityMinutes, cookieDomain, isHttpOnly, isSecure, redirectType, secretKey) {
         isHttpOnly = isHttpOnly == null ? false : isHttpOnly;
         isSecure = isSecure == null ? false : isSecure;
-        this.createCookie(eventId, queueId, fixedCookieValidityMinutes ? fixedCookieValidityMinutes.toString() : "", redirectType, cookieDomain, isHttpOnly, isSecure, sameSiteValue, secretKey);
+        this.createCookie(eventId, queueId, fixedCookieValidityMinutes ? fixedCookieValidityMinutes.toString() : "", redirectType, cookieDomain, isHttpOnly, isSecure, secretKey);
     };
-    UserInQueueStateCookieRepository.prototype.createCookie = function (eventId, queueId, fixedCookieValidityMinutes, redirectType, cookieDomain, isHttpOnly, isSecure, sameSiteValue, secretKey) {
+    UserInQueueStateCookieRepository.prototype.createCookie = function (eventId, queueId, fixedCookieValidityMinutes, redirectType, cookieDomain, isHttpOnly, isSecure, secretKey) {
         var cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
         var issueTime = QueueITHelpers_1.Utils.getCurrentTime().toString();
         var cookieValues = new Array();
@@ -986,7 +994,7 @@ var UserInQueueStateCookieRepository = /** @class */ (function () {
         var tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         var expire = Math.floor(tomorrow.getTime() / 1000);
-        this.httpContextProvider.getHttpResponse().setCookie(cookieKey, QueueITHelpers_1.CookieHelper.toValueFromKeyValueCollection(cookieValues), cookieDomain, expire, isHttpOnly, isSecure, sameSiteValue);
+        this.httpContextProvider.getHttpResponse().setCookie(cookieKey, QueueITHelpers_1.CookieHelper.toValueFromKeyValueCollection(cookieValues), cookieDomain, expire, isHttpOnly, isSecure);
     };
     UserInQueueStateCookieRepository.prototype.getState = function (eventId, cookieValidityMinutes, secretKey, validateTime) {
         try {
@@ -1030,10 +1038,10 @@ var UserInQueueStateCookieRepository = /** @class */ (function () {
             return false;
         }
     };
-    UserInQueueStateCookieRepository.prototype.cancelQueueCookie = function (eventId, cookieDomain, isCookieHttpOnly, isSecure, sameSiteValue) {
+    UserInQueueStateCookieRepository.prototype.cancelQueueCookie = function (eventId, cookieDomain, isCookieHttpOnly, isSecure) {
         var cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
         this.httpContextProvider.getHttpResponse()
-            .setCookie(cookieKey, "", cookieDomain, 0, isCookieHttpOnly, isSecure, sameSiteValue);
+            .setCookie(cookieKey, "", cookieDomain, 0, isCookieHttpOnly, isSecure);
     };
     UserInQueueStateCookieRepository.prototype.reissueQueueCookie = function (eventId, cookieValidityMinutes, cookieDomain, secretKey) {
         var cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
@@ -1046,7 +1054,7 @@ var UserInQueueStateCookieRepository = /** @class */ (function () {
         var fixedCookieValidityMinutes = "";
         if (cookieValues[UserInQueueStateCookieRepository._FixedCookieValidityMinutesKey])
             fixedCookieValidityMinutes = cookieValues[UserInQueueStateCookieRepository._FixedCookieValidityMinutesKey].toString();
-        this.createCookie(eventId, cookieValues[UserInQueueStateCookieRepository._QueueIdKey], fixedCookieValidityMinutes, cookieValues[UserInQueueStateCookieRepository._RedirectTypeKey], cookieDomain, cookieValues[UserInQueueStateCookieRepository._IsCookieHttpOnly], cookieValues[UserInQueueStateCookieRepository._IsCookieSecure], cookieValues[UserInQueueStateCookieRepository._CookieSameSiteValue], secretKey);
+        this.createCookie(eventId, cookieValues[UserInQueueStateCookieRepository._QueueIdKey], fixedCookieValidityMinutes, cookieValues[UserInQueueStateCookieRepository._RedirectTypeKey], cookieDomain, cookieValues[UserInQueueStateCookieRepository._IsCookieHttpOnly], cookieValues[UserInQueueStateCookieRepository._IsCookieSecure], secretKey);
     };
     UserInQueueStateCookieRepository.prototype.generateHash = function (eventId, queueId, fixedCookieValidityMinutes, redirectType, issueTime, secretKey) {
         var valueToHash = eventId + queueId + fixedCookieValidityMinutes + redirectType + issueTime;
@@ -1061,7 +1069,6 @@ var UserInQueueStateCookieRepository = /** @class */ (function () {
     UserInQueueStateCookieRepository._FixedCookieValidityMinutesKey = "FixedValidityMins";
     UserInQueueStateCookieRepository._IsCookieHttpOnly = "IsCookieHttpOnly";
     UserInQueueStateCookieRepository._IsCookieSecure = "IsCookieSecure";
-    UserInQueueStateCookieRepository._CookieSameSiteValue = "CookieSameSiteValue";
     return UserInQueueStateCookieRepository;
 }());
 exports.UserInQueueStateCookieRepository = UserInQueueStateCookieRepository;

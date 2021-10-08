@@ -14,8 +14,7 @@ export interface IHttpRequest {
             domain: string,
             expiration: number,
             httpOnly: boolean,
-            isSecure: boolean,
-            sameSiteValue: string);
+            isSecure: boolean);
     }
 
     export interface IHttpContextProvider {

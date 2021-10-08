@@ -1,12 +1,12 @@
 import {Utils, QueueUrlParams, QueueParameterHelper} from './QueueITHelpers'
 import {ActionTypes, RequestValidationResult, QueueEventConfig, CancelEventConfig} from './Models'
 import {UserInQueueStateCookieRepository} from './UserInQueueStateCookieRepository'
-
+import {IHttpContextProvider} from './HttpContextProvider';
 
 export class UserInQueueService {
-    static readonly SDK_VERSION = "v3-javascript-" + "3.7.0";
+    static readonly SDK_VERSION = "v3-javascript-" + "3.7.3";
 
-    constructor(private userInQueueStateRepository: UserInQueueStateCookieRepository) {
+    constructor(private httpContextProvider: IHttpContextProvider, private userInQueueStateRepository: UserInQueueStateCookieRepository) {
     }
 
     private getValidTokenResult(
@@ -22,7 +22,6 @@ export class UserInQueueService {
             config.cookieDomain,
             config.isCookieHttpOnly,
             config.isCookieSecure,
-            config.cookieSameSiteValue,
             queueParams.redirectType,
             secretKey);
 
@@ -44,14 +43,14 @@ export class UserInQueueService {
         errorCode: string)
         : RequestValidationResult {
 
-        let query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName) +
+        const query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName) +
             `&queueittoken=${qParams.queueITToken}` +
             `&ts=${Utils.getCurrentTime()}` +
             (targetUrl ? `&t=${Utils.encodeUrl(targetUrl)}` : "");
 
-        var uriPath = `error/${errorCode}/`;
+        const uriPath = `error/${errorCode}/`;
 
-        var redirectUrl = this.generateRedirectUrl(config.queueDomain, uriPath, query);
+        const redirectUrl = this.generateRedirectUrl(config.queueDomain, uriPath, query);
 
         return new RequestValidationResult(
             ActionTypes.QueueAction,
@@ -70,11 +69,11 @@ export class UserInQueueService {
         : RequestValidationResult {
 
         let query = this.getQueryString(customerId,
-                config.eventId,
-                config.version,
-                config.culture,
-                config.layoutName,
-                config.actionName) +
+            config.eventId,
+            config.version,
+            config.culture,
+            config.layoutName,
+            config.actionName) +
             (targetUrl ? "&t=" + Utils.encodeUrl(targetUrl) : "");
 
         const redirectUrl = this.generateRedirectUrl(config.queueDomain, "", query);
@@ -137,7 +136,6 @@ export class UserInQueueService {
                     config.cookieDomain,
                     config.isCookieHttpOnly,
                     config.isCookieSecure,
-                    config.cookieSameSiteValue,
                     state.redirectType,
                     secretKey);
             }
@@ -173,8 +171,7 @@ export class UserInQueueService {
                 config.eventId,
                 config.cookieDomain,
                 config.isCookieHttpOnly,
-                config.isCookieSecure,
-                config.cookieSameSiteValue);
+                config.isCookieSecure);
         }
 
         return requestValidationResult;
@@ -193,8 +190,7 @@ export class UserInQueueService {
             this.userInQueueStateRepository.cancelQueueCookie(config.eventId,
                 config.cookieDomain,
                 config.isCookieHttpOnly,
-                config.isCookieSecure,
-                config.cookieSameSiteValue);
+                config.isCookieSecure);
 
             const query = this.getQueryString(customerId, config.eventId, config.version, null, null, config.actionName) +
                 (targetUrl ? "&r=" + Utils.encodeUrl(targetUrl) : "");
@@ -253,6 +249,14 @@ export class UserInQueueService {
         if (queueParams.timeStamp < Utils.getCurrentTime())
             return new TokenValidationResult(false, "timestamp");
 
+        const clientIp = this.httpContextProvider.getHttpRequest().getUserHostAddress();
+        if (queueParams.hashedIp && clientIp) {
+            const hashedIp = Utils.generateSHA256Hash(secretKey, clientIp);
+            if (hashedIp !== queueParams.hashedIp) {
+                return new TokenValidationResult(false, "ip");
+            }
+        }
+
         return new TokenValidationResult(true, null);
     }
 
@@ -262,7 +266,5 @@ class TokenValidationResult {
     constructor(
         public isValid: boolean,
         public errorCode: string) {
-
     }
-
 }

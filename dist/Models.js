@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ActionTypes = exports.KnownUserException = exports.RequestValidationResult = exports.CancelEventConfig = exports.QueueEventConfig = void 0;
 var QueueITHelpers_1 = require("./QueueITHelpers");
 var QueueEventConfig = /** @class */ (function () {
-    function QueueEventConfig(eventId, layoutName, culture, queueDomain, extendCookieValidity, cookieValidityMinute, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, version, actionName) {
+    function QueueEventConfig(eventId, layoutName, culture, queueDomain, extendCookieValidity, cookieValidityMinute, cookieDomain, isCookieHttpOnly, isCookieSecure, version, actionName) {
         if (actionName === void 0) { actionName = 'unspecified'; }
         this.eventId = eventId;
         this.layoutName = layoutName;
@@ -14,14 +14,12 @@ var QueueEventConfig = /** @class */ (function () {
         this.cookieDomain = cookieDomain;
         this.isCookieHttpOnly = isCookieHttpOnly;
         this.isCookieSecure = isCookieSecure;
-        this.cookieSameSiteValue = cookieSameSiteValue;
         this.version = version;
         this.actionName = actionName;
     }
     QueueEventConfig.prototype.getString = function () {
         return "EventId:" + this.eventId + "&Version:" + this.version + "&ActionName:" + this.actionName + "&QueueDomain:" + this.queueDomain +
             ("&CookieDomain:" + this.cookieDomain + "&IsCookieHttpOnly:" + this.isCookieHttpOnly + "&IsCookieSecure:" + this.isCookieSecure) +
-            ("&CookieSameSiteValue:" + this.cookieSameSiteValue) +
             ("&ExtendCookieValidity:" + this.extendCookieValidity) +
             ("&CookieValidityMinute:" + this.cookieValidityMinute + "&LayoutName:" + this.layoutName + "&Culture:" + this.culture);
     };
@@ -29,14 +27,13 @@ var QueueEventConfig = /** @class */ (function () {
 }());
 exports.QueueEventConfig = QueueEventConfig;
 var CancelEventConfig = /** @class */ (function () {
-    function CancelEventConfig(eventId, queueDomain, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, version, actionName) {
+    function CancelEventConfig(eventId, queueDomain, cookieDomain, isCookieHttpOnly, isCookieSecure, version, actionName) {
         if (actionName === void 0) { actionName = 'unspecified'; }
         this.eventId = eventId;
         this.queueDomain = queueDomain;
         this.cookieDomain = cookieDomain;
         this.isCookieHttpOnly = isCookieHttpOnly;
         this.isCookieSecure = isCookieSecure;
-        this.cookieSameSiteValue = cookieSameSiteValue;
         this.version = version;
         this.actionName = actionName;
     }
@@ -44,7 +41,6 @@ var CancelEventConfig = /** @class */ (function () {
         return "EventId:" + this.eventId + "&Version:" + this.version +
             ("&QueueDomain:" + this.queueDomain) +
             ("&CookieDomain:" + this.cookieDomain + "&IsCookieHttpOnly:" + this.isCookieHttpOnly + "&IsCookieSecure:" + this.isCookieSecure) +
-            ("&CookieSameSiteValue:" + this.cookieSameSiteValue) +
             ("&ActionName:" + this.actionName);
     };
     return CancelEventConfig;

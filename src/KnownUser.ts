@@ -1,10 +1,10 @@
-import { UserInQueueService } from './UserInQueueService'
-import { UserInQueueStateCookieRepository } from './UserInQueueStateCookieRepository'
-import { IHttpContextProvider } from './HttpContextProvider'
-import { CancelEventConfig, QueueEventConfig, KnownUserException, RequestValidationResult, ActionTypes } from './Models'
-import { Utils, ConnectorDiagnostics } from './QueueITHelpers'
-import * as IntegrationConfig  from './IntegrationConfig/IntegrationConfigModel'
-import * as IntegrationConfigHelpers   from './IntegrationConfig/IntegrationConfigHelpers'
+import {UserInQueueService} from './UserInQueueService'
+import {UserInQueueStateCookieRepository} from './UserInQueueStateCookieRepository'
+import {IHttpContextProvider} from './HttpContextProvider'
+import {CancelEventConfig, QueueEventConfig, KnownUserException, RequestValidationResult, ActionTypes} from './Models'
+import {Utils, ConnectorDiagnostics} from './QueueITHelpers'
+import * as IntegrationConfig from './IntegrationConfig/IntegrationConfigModel'
+import * as IntegrationConfigHelpers from './IntegrationConfig/IntegrationConfigHelpers'
 
 export class KnownUser {
     public static readonly QueueITTokenKey = "queueittoken";
@@ -16,7 +16,7 @@ export class KnownUser {
     private static getUserInQueueService(
         httpContextProvider: IHttpContextProvider): UserInQueueService {
         if (!this.UserInQueueService) {
-            return new UserInQueueService(new UserInQueueStateCookieRepository(httpContextProvider));
+            return new UserInQueueService(httpContextProvider, new UserInQueueStateCookieRepository(httpContextProvider));
         }
         return this.UserInQueueService;
     }
@@ -67,8 +67,7 @@ export class KnownUser {
             null,
             Utils.getCurrentTime() + 20 * 60, // now + 20 mins
             false,
-            false,
-            null);
+            false);
     }
 
     private static _resolveQueueRequestByLocalConfig(
@@ -187,7 +186,6 @@ export class KnownUser {
             matchedConfig.CookieDomain,
             matchedConfig.IsCookieHttpOnly,
             matchedConfig.IsCookieSecure,
-            matchedConfig.CookieSameSiteValue,
             customerIntegrationInfo.Version,
             matchedConfig.Name
         );
@@ -209,7 +207,6 @@ export class KnownUser {
             matchedConfig.CookieDomain,
             matchedConfig.IsCookieHttpOnly,
             matchedConfig.IsCookieSecure,
-            matchedConfig.CookieSameSiteValue,
             customerIntegrationInfo.Version,
             matchedConfig.Name
         );
@@ -261,13 +258,11 @@ export class KnownUser {
 
             targetUrl = this.generateTargetUrl(targetUrl, httpContextProvider);
             return this._resolveQueueRequestByLocalConfig(targetUrl, queueitToken, queueConfig, customerId, secretKey, httpContextProvider, debugEntries, connectorDiagnostics.isEnabled);
-        }
-        catch (e) {
+        } catch (e) {
             if (connectorDiagnostics.isEnabled)
                 debugEntries["Exception"] = e.message;
             throw e;
-        }
-        finally {
+        } finally {
             this.setDebugCookie(debugEntries, httpContextProvider);
         }
     }
@@ -333,13 +328,11 @@ export class KnownUser {
                     return this.handleIgnoreAction(httpContextProvider, matchedConfig.Name);
                 }
             }
-        }
-        catch (e) {
+        } catch (e) {
             if (connectorDiagnostics.isEnabled)
                 debugEntries["Exception"] = e.message;
             throw e;
-        }
-        finally {
+        } finally {
             this.setDebugCookie(debugEntries, httpContextProvider);
         }
     }
@@ -361,13 +354,11 @@ export class KnownUser {
         try {
             return this._cancelRequestByLocalConfig(
                 targetUrl, queueitToken, cancelConfig, customerId, secretKey, httpContextProvider, debugEntries, connectorDiagnostics.isEnabled)
-        }
-        catch (e) {
+        } catch (e) {
             if (connectorDiagnostics.isEnabled)
                 debugEntries["Exception"] = e.message;
             throw e;
-        }
-        finally {
+        } finally {
             this.setDebugCookie(debugEntries, httpContextProvider);
         }
     }

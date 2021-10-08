@@ -8,10 +8,9 @@ export declare class QueueEventConfig {
     cookieDomain: string;
     isCookieHttpOnly: boolean;
     isCookieSecure: boolean;
-    cookieSameSiteValue: string;
     version: number;
     actionName: string;
-    constructor(eventId: string, layoutName: string, culture: string, queueDomain: string, extendCookieValidity: boolean, cookieValidityMinute: number, cookieDomain: string, isCookieHttpOnly: boolean, isCookieSecure: boolean, cookieSameSiteValue: string, version: number, actionName?: string);
+    constructor(eventId: string, layoutName: string, culture: string, queueDomain: string, extendCookieValidity: boolean, cookieValidityMinute: number, cookieDomain: string, isCookieHttpOnly: boolean, isCookieSecure: boolean, version: number, actionName?: string);
     getString(): string;
 }
 export declare class CancelEventConfig {
@@ -20,10 +19,9 @@ export declare class CancelEventConfig {
     cookieDomain: string;
     isCookieHttpOnly: boolean;
     isCookieSecure: boolean;
-    cookieSameSiteValue: string;
     version: number;
     actionName: string;
-    constructor(eventId: string, queueDomain: string, cookieDomain: string, isCookieHttpOnly: boolean, isCookieSecure: boolean, cookieSameSiteValue: string, version: number, actionName?: string);
+    constructor(eventId: string, queueDomain: string, cookieDomain: string, isCookieHttpOnly: boolean, isCookieSecure: boolean, version: number, actionName?: string);
     getString(): string;
 }
 export declare class RequestValidationResult {

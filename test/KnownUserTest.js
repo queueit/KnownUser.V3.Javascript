@@ -32,8 +32,8 @@ userInQueueServiceMock.getIgnoreResult = function (actionName) {
             queueId: "",
             redirectUrl: "",
             redirectType: "",
-      actionType: "Ignore",
-      actionName: actionName
+            actionType: "Ignore",
+            actionName: actionName
         };
     return this.RequestValidationResult;
 };
@@ -49,14 +49,11 @@ userInQueueServiceMock.validateQueueRequest = function (targetUrl, queueitToken,
             secretKey: secretKey
         };
 
-        if(userInQueueServiceMock.validateQueueRequestResultRaiseException)
-        {
-            throw "exception";
-        }
-        else
-        {
-            return userInQueueServiceMock.validateQueueRequestResult;
-        }
+    if (userInQueueServiceMock.validateQueueRequestResultRaiseException) {
+        throw "exception";
+    } else {
+        return userInQueueServiceMock.validateQueueRequestResult;
+    }
 };
 userInQueueServiceMock.validateCancelRequest = function (targetUrl, cancelConfig, customerId, secretKey) {
     this.validateCancelRequestCall =
@@ -68,14 +65,11 @@ userInQueueServiceMock.validateCancelRequest = function (targetUrl, cancelConfig
             secretKey: secretKey
         };
 
-        if(userInQueueServiceMock.validateCancelRequestrRaiseException)
-        {
-            throw "exception";
-        }
-        else
-        {
-            return userInQueueServiceMock.cancelRequestCalls;
-        }
+    if (userInQueueServiceMock.validateCancelRequestrRaiseException) {
+        throw "exception";
+    } else {
+        return userInQueueServiceMock.cancelRequestCalls;
+    }
 };
 userInQueueServiceMock.extendQueueCookie = function (eventId, cookieValidityMinute, secretKey) {
     this.extendQueueCookieCall =
@@ -93,6 +87,7 @@ function resetMocks() {
     httpResponseMockCookies = {};
     userInQueueServiceMock.reset();
 }
+
 userInQueueServiceMock.reset = function () {
     this.validateQueueRequestResult = {};
     this.cancelRequestCalls = {};
@@ -120,8 +115,8 @@ var httpRequestMock = {
 
 httpResponseMockCookies = {};
 let httpResponseMock = {
-    setCookie: function (name, value, domain, expire, httpOnly, isSecure, sameSiteValue) {
-        httpResponseMockCookies[name] = {value, domain, expire, httpOnly, isSecure, sameSiteValue};
+    setCookie: function (name, value, domain, expire, httpOnly, isSecure) {
+        httpResponseMockCookies[name] = {value, domain, expire, httpOnly, isSecure};
     }
 };
 let httpContextProvider = {
@@ -223,8 +218,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", cancelEventConfig, "customerId", "secretKey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "cancelConfig.queueDomain can not be null or empty.";
         }
 
@@ -248,8 +242,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", cancelEventConfig, "customerId", "secretKey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "cancelConfig.eventId can not be null or empty.";
         }
 
@@ -267,8 +260,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", null, "customerId", "secretKey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "cancelConfig can not be null.";
         }
 
@@ -287,8 +279,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", eventconfig, null, "secretKey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "customerId can not be null or empty.";
         }
 
@@ -306,8 +297,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", eventconfig, "customerid", null, httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "secretKey can not be null or empty.";
         }
 
@@ -325,8 +315,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.cancelRequestByLocalConfig(null, "queueitToken", eventconfig, "customerid", "secretkey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "targetUrl can not be null or empty.";
         }
 
@@ -344,8 +333,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.extendQueueCookie(null, 0, null, null, httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "eventId can not be null or empty.";
         }
 
@@ -363,8 +351,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.extendQueueCookie("eventId", -1, "cookiedomain", "secretkey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "cookieValidityMinute should be integer greater than 0.";
         }
 
@@ -382,8 +369,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.extendQueueCookie("eventId", 20, "cookiedomain", null, httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "secretKey can not be null or empty.";
         }
 
@@ -468,8 +454,7 @@ var KnownUserTest = {
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
             knownUser.resolveQueueRequestByLocalConfig("targetUrl", "queueitToken", null, null, "secretKey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "customerId can not be null or empty.";
         }
 
@@ -488,8 +473,7 @@ var KnownUserTest = {
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
             knownUser.resolveQueueRequestByLocalConfig("targetUrl", "queueitToken", null, "customerId", null, httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "secretKey can not be null or empty.";
         }
 
@@ -508,8 +492,7 @@ var KnownUserTest = {
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
             knownUser.resolveQueueRequestByLocalConfig("targetUrl", "queueitToken", null, "customerId", "secretKey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "queueConfig can not be null.";
         }
 
@@ -538,8 +521,7 @@ var KnownUserTest = {
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
             knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "queueConfig.eventId can not be null or empty.";
         }
 
@@ -569,8 +551,7 @@ var KnownUserTest = {
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
             knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "queueConfig.queueDomain can not be null or empty.";
         }
 
@@ -599,8 +580,7 @@ var KnownUserTest = {
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
             knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "queueConfig.cookieValidityMinute should be integer greater than 0.";
         }
 
@@ -836,8 +816,7 @@ var KnownUserTest = {
         //Act
         try {
             result = knownUser.validateRequestByIntegrationConfig(null, "queueIttoken", integrationConfigString, "customerId", "secretKey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "currentUrlWithoutQueueITToken can not be null or empty.";
         }
 
@@ -855,8 +834,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.validateRequestByIntegrationConfig("currentUrl", "queueitToken", null, "customerId", "secretKey", httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             exceptionWasThrown = err.message === "integrationsConfigString can not be null or empty.";
         }
 
@@ -1134,12 +1112,9 @@ var KnownUserTest = {
             "ConfigDataVersion": "1.0.0.1"
         }`;
 
-        try
-        {
+        try {
             var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
-        }
-        catch
-        {
+        } catch {
 
         }
 
@@ -1272,8 +1247,8 @@ var KnownUserTest = {
 
     test_validateRequestByIntegrationConfig_IgnoreAction: function () {
 
-      resetMocks();
-      userInQueueServiceMock.validateQueueRequestResult = new Models.RequestValidationResult("Ignore", "eventid", "queueid", "redirectUrl", "", "event1action");
+        resetMocks();
+        userInQueueServiceMock.validateQueueRequestResult = new Models.RequestValidationResult("Ignore", "eventid", "queueid", "redirectUrl", "", "event1action");
 
         httpRequestMockHeaders = {
             "user-agent": "googlebot"
@@ -1477,12 +1452,11 @@ var KnownUserTest = {
         expect(actualCookieValue).to.contain(
             "&CookieDomain:.test.com" +
             "&IsCookieHttpOnly:false" +
-            "&IsCookieSecure:false"+
-            "&CookieSameSiteValue:undefined"+
+            "&IsCookieSecure:false" +
             "&ExtendCookieValidity:true" +
             "&CookieValidityMinute:20");
         expect(actualCookieValue).to.contain('LayoutName:Christmas Layout by Queue-it&Culture:da-DK')
-	expect(actualCookieValue).to.contain("SdkVersion=" + SDK_VERSION + "|");
+        expect(actualCookieValue).to.contain("SdkVersion=" + SDK_VERSION + "|");
     },
 
     test_validateRequestByIntegrationConfig_Debug_WithoutMatch: function () {
@@ -1655,14 +1629,13 @@ var KnownUserTest = {
 
         var secretKey = "secretKey";
         var queueitToken = generateDebugToken("eventId", secretKey);
-       // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
+        // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
         try {
             knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, "{}", "customerId", secretKey, httpContextProvider);
-        }
-        catch (err) {
-            assert (err.message === "integrationsConfigString can not be null or empty.");
+        } catch (err) {
+            assert(err.message === "integrationsConfigString can not be null or empty.");
         }
 
         //Assert
@@ -1831,7 +1804,6 @@ var KnownUserTest = {
         eventconfig.cookieDomain = "cookieDomain";
         eventconfig.isCookieHttpOnly = false;
         eventconfig.isCookieSecure = false;
-        eventconfig.cookieSameSiteValue = undefined;
         eventconfig.layoutName = "layoutName";
         eventconfig.culture = "culture";
         eventconfig.eventId = "eventId";
@@ -1864,7 +1836,6 @@ var KnownUserTest = {
             "&CookieDomain:cookieDomain" +
             "&IsCookieHttpOnly:false" +
             "&IsCookieSecure:false" +
-            "&CookieSameSiteValue:undefined" +
             "&ExtendCookieValidity:true" +
             "&CookieValidityMinute:10" +
             "&LayoutName:layoutName" +
@@ -1897,8 +1868,7 @@ var KnownUserTest = {
 
         try {
             knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, null, "customerId", secretKey, httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             assert(err.message === "queueConfig can not be null.");
         }
 
@@ -2078,12 +2048,9 @@ var KnownUserTest = {
         knownUser.UserInQueueService = userInQueueServiceMock;
 
         //Assert
-        try
-        {
+        try {
             var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", "queueitToken", eventconfig, "customerId", secretKey, httpContextProvider);
-        }
-        catch
-        {
+        } catch {
 
         }
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -2178,8 +2145,7 @@ var KnownUserTest = {
 
         try {
             knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, null, "customerId", secretKey, httpContextProvider);
-        }
-        catch (err) {
+        } catch (err) {
             assert(err.message === "cancelConfig can not be null.");
         }
 
@@ -2350,13 +2316,10 @@ var KnownUserTest = {
         cancelEventconfig.version = 1;
         userInQueueServiceMock.validateCancelRequestrRaiseException = true;
         knownUser.UserInQueueService = userInQueueServiceMock;
-        try
-        {
+        try {
             var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true",
-                        "queueitToken", cancelEventconfig, "customerid", "secretKey", httpContextProvider);
-        }
-        catch
-        {
+                "queueitToken", cancelEventconfig, "customerid", "secretKey", httpContextProvider);
+        } catch {
 
         }
 

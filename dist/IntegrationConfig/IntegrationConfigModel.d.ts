@@ -4,7 +4,6 @@ export declare class IntegrationConfigModel {
     CookieDomain: string;
     IsCookieHttpOnly: boolean;
     IsCookieSecure: boolean;
-    CookieSameSiteValue: string | null;
     LayoutName: string;
     Culture: string;
     ExtendCookieValidity: boolean | null;

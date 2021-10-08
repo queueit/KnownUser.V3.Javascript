@@ -11,7 +11,6 @@ export class QueueEventConfig {
         public cookieDomain: string,
         public isCookieHttpOnly: boolean,
         public isCookieSecure: boolean,
-        public cookieSameSiteValue: string,
         public version: number,
         public actionName: string = 'unspecified') {
     }
@@ -19,7 +18,6 @@ export class QueueEventConfig {
     getString() {
         return `EventId:${this.eventId}&Version:${this.version}&ActionName:${this.actionName}&QueueDomain:${this.queueDomain}` +
             `&CookieDomain:${this.cookieDomain}&IsCookieHttpOnly:${this.isCookieHttpOnly}&IsCookieSecure:${this.isCookieSecure}` +
-            `&CookieSameSiteValue:${this.cookieSameSiteValue}` +
             `&ExtendCookieValidity:${this.extendCookieValidity}` +
             `&CookieValidityMinute:${this.cookieValidityMinute}&LayoutName:${this.layoutName}&Culture:${this.culture}`;
     }
@@ -31,7 +29,6 @@ export class CancelEventConfig {
                 public cookieDomain: string,
                 public isCookieHttpOnly: boolean,
                 public isCookieSecure: boolean,
-                public cookieSameSiteValue: string,
                 public version: number,
                 public actionName: string = 'unspecified') {
     }
@@ -40,7 +37,6 @@ export class CancelEventConfig {
         return `EventId:${this.eventId}&Version:${this.version}` +
             `&QueueDomain:${this.queueDomain}` +
             `&CookieDomain:${this.cookieDomain}&IsCookieHttpOnly:${this.isCookieHttpOnly}&IsCookieSecure:${this.isCookieSecure}` +
-            `&CookieSameSiteValue:${this.cookieSameSiteValue}` +
             `&ActionName:${this.actionName}`;
     }
 }

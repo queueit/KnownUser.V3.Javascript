@@ -42,6 +42,7 @@ import {KnownUserException,RequestValidationResult} from './Models'
         public queueITTokenWithoutHash: string;
         public queueId: string;
         public redirectType: string;
+        public hashedIp: string;
     }
 
     export class QueueParameterHelper {
@@ -52,6 +53,7 @@ import {KnownUserException,RequestValidationResult} from './Models'
         public static readonly EventIdKey = "e";
         public static readonly QueueIdKey = "q";
         public static readonly RedirectTypeKey = "rt";
+        public static readonly HashedIPKey  = 'hip';
         public static readonly KeyValueSeparatorChar = '_';
         public static readonly KeyValueSeparatorGroupChar = '~';
 
@@ -102,6 +104,9 @@ import {KnownUserException,RequestValidationResult} from './Models'
                         break;
                     case QueueParameterHelper.RedirectTypeKey:
                         result.redirectType = keyValueArr[1] || "";
+                        break;
+                    case QueueParameterHelper.HashedIPKey:
+                        result.hashedIp = keyValueArr[1] || "";
                         break;
                 }
             }

@@ -31,15 +31,14 @@ let httpContextProvider = {
     },
     getHttpResponse: function () {
         let httpResponse = {
-            setCookie: function (name, value, domain, expire, httpOnly, isSecure, sameSiteValue) {
+            setCookie: function (name, value, domain, expire, httpOnly, isSecure) {
                 mockCookies[name] = {
                     name,
                     value,
                     expire,
                     domain,
                     httpOnly,
-                    isSecure,
-                    sameSiteValue
+                    isSecure
                 };
             }
         };
@@ -59,7 +58,6 @@ let UserInQueueStateCookieRepositoryTest = {
         const cookieValidity = 10;
         const cookieIsHttpOnly = true;
         const cookieIsSecure = true;
-        const cookieSameSiteValue = 'Strict';
 
         userInQueueStateCookieRepository.store(
             eventId,
@@ -68,7 +66,6 @@ let UserInQueueStateCookieRepositoryTest = {
             cookieDomain,
             cookieIsHttpOnly,
             cookieIsSecure,
-            cookieSameSiteValue,
             "queue",
             secretKey);
         const state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
@@ -85,7 +82,6 @@ let UserInQueueStateCookieRepositoryTest = {
         assert(actualCookie.domain === cookieDomain);
         expect(actualCookie.httpOnly).to.be.true;
         expect(actualCookie.isSecure).to.be.true;
-        expect(actualCookie.sameSiteValue).to.be.equal('Strict');
     },
 
     test_store_isCookieHttpOnlyNotSet_Then_HttpOnly_Should_NotBeSet: function () {
@@ -98,7 +94,6 @@ let UserInQueueStateCookieRepositoryTest = {
         const cookieValidity = 10;
         const isCookieHttpOnly = undefined;
         const isCookieSecure = undefined;
-        const cookieSameSiteValue = undefined;
 
         userInQueueStateCookieRepository.store(
             eventId,
@@ -107,7 +102,6 @@ let UserInQueueStateCookieRepositoryTest = {
             cookieDomain,
             isCookieHttpOnly,
             isCookieSecure,
-            cookieSameSiteValue,
             "queue",
             secretKey);
         const state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
@@ -124,7 +118,6 @@ let UserInQueueStateCookieRepositoryTest = {
         assert(actualCookie.domain === cookieDomain);
         expect(actualCookie.httpOnly).to.be.false;
         expect(actualCookie.isSecure).to.be.false;
-        expect(actualCookie.sameSiteValue).to.be.undefined;
     },
     test_store_hasValidState_ExtendableCookie_CookieIsSaved: function () {
         mockCookies = {}; // reset
@@ -136,9 +129,8 @@ let UserInQueueStateCookieRepositoryTest = {
         let cookieValidity = 10;
         const isCookieHttpOnly = false;
         const isCookieSecure = false;
-        const isCookieSameSiteValue = false;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, isCookieSameSiteValue, "queue", secretKey);
+        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, "queue", secretKey);
         let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
 
         assert(state.isValid);
@@ -162,8 +154,7 @@ let UserInQueueStateCookieRepositoryTest = {
 
         const isCookieHttpOnly = false;
         const isCookieSecure = false;
-        const cookieSameSiteValue = 'Lax';
-        userInQueueStateCookieRepository.store(eventId, queueId, cookieValidity, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "idle", secretKey);
+        userInQueueStateCookieRepository.store(eventId, queueId, cookieValidity, cookieDomain, isCookieHttpOnly, isCookieSecure, "idle", secretKey);
         let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
 
         assert(state.isValid);
@@ -177,7 +168,6 @@ let UserInQueueStateCookieRepositoryTest = {
         assert(mockCookies[cookieKey].expire - QueueITHelpers.Utils.getCurrentTime() - 24 * 60 * 60 < 100);
         assert(mockCookies[cookieKey].domain === cookieDomain);
         expect(mockCookies[cookieKey].isSecure).to.be.false;
-        expect(mockCookies[cookieKey].sameSiteValue).to.be.equal('Lax');
     },
     test_store_hasValidState_tamperedCookie_stateIsNotValid_isCookieExtendable: function () {
         mockCookies = {}; // reset
@@ -189,9 +179,8 @@ let UserInQueueStateCookieRepositoryTest = {
         let cookieValidity = 10;
         const isCookieHttpOnly = false;
         const isCookieSecure = false;
-        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, 3, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Idle", secretKey);
+        userInQueueStateCookieRepository.store(eventId, queueId, 3, cookieDomain, isCookieHttpOnly, isCookieSecure, "Idle", secretKey);
         let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid);
 
@@ -213,9 +202,8 @@ let UserInQueueStateCookieRepositoryTest = {
         const cookieValidity = 10;
         const isCookieHttpOnly = false;
         const isCookieSecure = false
-        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, 3, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Idle", secretKey);
+        userInQueueStateCookieRepository.store(eventId, queueId, 3, cookieDomain, isCookieHttpOnly, isCookieSecure, "Idle", secretKey);
         let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid);
 
@@ -237,9 +225,8 @@ let UserInQueueStateCookieRepositoryTest = {
         const cookieValidity = -1;
         const isCookieHttpOnly = false;
         const isCookieSecure = false
-        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "idle", secretKey);
+        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, "idle", secretKey);
         let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid === false);
     },
@@ -253,9 +240,8 @@ let UserInQueueStateCookieRepositoryTest = {
         const cookieValidity = 10;
         const isCookieHttpOnly = false;
         const isCookieSecure = false
-        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Queue", secretKey);
+        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, "Queue", secretKey);
         let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid);
 
@@ -285,9 +271,8 @@ let UserInQueueStateCookieRepositoryTest = {
         const cookieValidity = 10;
         const isCookieHttpOnly = false;
         const isCookieSecure = false
-        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, 20, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Queue", secretKey);
+        userInQueueStateCookieRepository.store(eventId, queueId, 20, cookieDomain, isCookieHttpOnly, isCookieSecure, "Queue", secretKey);
         let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid);
 
@@ -306,9 +291,8 @@ let UserInQueueStateCookieRepositoryTest = {
         const cookieValidity = 20;
         const isCookieHttpOnly = false;
         const isCookieSecure = false
-        const cookieSameSiteValue = undefined;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, 20, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Queue", secretKey);
+        userInQueueStateCookieRepository.store(eventId, queueId, 20, cookieDomain, isCookieHttpOnly, isCookieSecure, "Queue", secretKey);
         let state = userInQueueStateCookieRepository.getState(eventId, cookieValidity, secretKey, true);
         assert(state.isValid);
 
@@ -331,10 +315,9 @@ let UserInQueueStateCookieRepositoryTest = {
         const queueId = "queueId";
         const cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey(eventId);
         const isCookieHttpOnly = false;
-        const isCookieSecure = false
-        const cookieSameSiteValue = undefined;
+        const isCookieSecure = false;
 
-        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Queue", secretKey);
+        userInQueueStateCookieRepository.store(eventId, queueId, null, cookieDomain, isCookieHttpOnly, isCookieSecure, "Queue", secretKey);
         userInQueueStateCookieRepository.reissueQueueCookie(eventId, 12, cookieDomain, secretKey);
 
         let state = userInQueueStateCookieRepository.getState(eventId, 5, secretKey, true);
@@ -352,10 +335,9 @@ let UserInQueueStateCookieRepositoryTest = {
         const cookieDomain = ".test.com";
         const queueId = "queueId";
         const isCookieHttpOnly = false;
-        const isCookieSecure = false
-        const cookieSameSiteValue = undefined;
+        const isCookieSecure = false;
 
-        userInQueueStateCookieRepository.store("event2", queueId, 20, cookieDomain, isCookieHttpOnly, isCookieSecure, cookieSameSiteValue, "Queue", secretKey);
+        userInQueueStateCookieRepository.store("event2", queueId, 20, cookieDomain, isCookieHttpOnly, isCookieSecure, "Queue", secretKey);
         userInQueueStateCookieRepository.reissueQueueCookie(eventId, 12, cookieDomain, secretKey);
 
         let cookieKey = UserInQueueStateCookieRepository.UserInQueueStateCookieRepository.getCookieKey("event2");

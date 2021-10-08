@@ -1,7 +1,7 @@
 # KnownUser.V3.Javascript
 Before getting started please read the [documentation](https://github.com/queueit/Documentation/tree/main/serverside-connectors) to get acquainted with server-side connectors.
 
-Connector was developed with TypeScript and verified using Nodejs v.8.12 and Express v.4.16.
+The connector was developed with TypeScript and verified using Nodejs v.8.12 and Express v.4.16.
 
 You can find the latest released version [here](https://github.com/queueit/KnownUser.V3.Javascript/releases/latest). or download latest npm package from [here](https://www.npmjs.com/package/queueit-knownuser).
 
@@ -10,9 +10,13 @@ The KnownUser validation must be done on *all requests except requests for stati
 So, if you add the KnownUser validation logic to a central place, then be sure that the Triggers only fire on page requests (including ajax requests) and not on e.g. image.
 
 The following is an example route in express/nodejs which shows how to validate that a user has been through the queue.
-It assumes that your integrationconfiguration file is located in root of the web application.
+It assumes that your integration configuration file is located in root of the web application.
  
 ```javascript
+const QUEUEIT_FAILED_HEADERNAME = "x-queueit-failed";
+const QUEUEIT_CONNECTOR_EXECUTED_HEADER_NAME = 'x-queueit-connector';
+const QUEUEIT_CONNECTOR_NAME = "nodejs"
+
 var express = require('express');
 var router = express.Router();
 var fs = require('fs');
@@ -21,16 +25,29 @@ var QueueITConnector = require('queueit-knownuser');
 
 configureKnownUserHashing();
 
+function isIgnored(req){
+  return req.method == 'HEAD' || req.method == 'OPTIONS'
+}
+
 /* GET home page. */
 router.get('/', function (req, res, next) {
   try {
+    res.header(QUEUEIT_CONNECTOR_EXECUTED_HEADER_NAME, QUEUEIT_CONNECTOR_NAME);
+    if(isIgnored(req)){
+      // Render page
+      res.render('index', {
+        node_version: process.version,
+        express_version: require('express/package').version
+      });
+      return;
+    }
     var integrationsConfigString = fs.readFileSync('integrationconfiguration.json', 'utf8');
 
     var customerId = ""; // Your Queue-it customer ID
     var secretKey = ""; // Your 72 char secret key as specified in Go Queue-it self-service platform
 
     var httpContextProvider = initializeExpressHttpContextProvider(req, res);
-
+    
     var knownUser = QueueITConnector.KnownUser;
     var queueitToken = req.query[knownUser.QueueITTokenKey];
     var requestUrl = httpContextProvider.getHttpRequest().getAbsoluteUri();
@@ -85,6 +102,7 @@ router.get('/', function (req, res, next) {
     // Use your own logging framework to log the error
     // This was a configuration error, so we let the user continue
     console.log("ERROR:" + e);
+    res.header(QUEUEIT_FAILED_HEADERNAME, 'true');
   }
 });
 
@@ -124,12 +142,12 @@ function initializeExpressHttpContextProvider(req, res) {
         },
         getHttpResponse: function () {
             var httpResponse = {
-                setCookie: function (cookieName, cookieValue, domain, expiration, httpOnly, isSecure, sameSiteValue) {
+                setCookie: function (cookieName, cookieValue, domain, expiration, httpOnly, isSecure) {
                     if (domain === "")
                         domain = null;
 
                     // expiration is in secs, but Date needs it in milisecs
-                    var expirationDate = new Date(expiration * 1000);
+                    const expirationDate = new Date(expiration * 1000);
 
                     // This requires 'cookie-parser' node module (installed/used from app.js)
                     res.cookie(
@@ -140,8 +158,7 @@ function initializeExpressHttpContextProvider(req, res) {
                             path: "/",
                             domain: domain,
                             secure: isSecure,
-                            httpOnly: httpOnly,
-                            sameSite: sameSiteValue
+                            httpOnly: httpOnly
                         });
                 }
             };
@@ -172,6 +189,10 @@ Specify the configuration in code without using the Trigger/Action paradigm. In 
 The following is an example (using Express/Nodejs) of how to specify the configuration in code:
 
 ```javascript
+const QUEUEIT_FAILED_HEADERNAME = "x-queueit-failed";
+const QUEUEIT_CONNECTOR_EXECUTED_HEADER_NAME = 'x-queueit-connector';
+const QUEUEIT_CONNECTOR_NAME = "nodejs"
+
 var express = require('express');
 var router = express.Router();
 var fs = require('fs');
@@ -180,9 +201,23 @@ var QueueITConnector = require('queueit-knownuser');
 
 configureKnownUserHashing();
 
+function isIgnored(req){
+  return req.method == 'HEAD' || req.method == 'OPTIONS'
+}
+
 /* GET home page. */
 router.get('/', function (req, res, next) {
   try {
+    res.header(QUEUEIT_CONNECTOR_EXECUTED_HEADER_NAME, QUEUEIT_CONNECTOR_NAME);
+    if(isIgnored(req)){
+      // Render page
+      res.render('index', {
+        node_version: process.version,
+        express_version: require('express/package').version
+      });
+      return;
+    }
+    
     var integrationsConfigString = fs.readFileSync('integrationconfiguration.json', 'utf8');
 
     var customerId = ""; // Your Queue-it customer ID
@@ -253,6 +288,7 @@ router.get('/', function (req, res, next) {
     // Use your own logging framework to log the error
     // This was a configuration error, so we let the user continue
     console.log("ERROR:" + e);
+    res.header(QUEUEIT_FAILED_HEADERNAME, 'true');
   }
 });
 

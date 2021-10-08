@@ -89,6 +89,9 @@ var QueueParameterHelper = /** @class */ (function () {
                 case QueueParameterHelper.RedirectTypeKey:
                     result.redirectType = keyValueArr[1] || "";
                     break;
+                case QueueParameterHelper.HashedIPKey:
+                    result.hashedIp = keyValueArr[1] || "";
+                    break;
             }
         }
         var hashWithPrefix = "" + QueueParameterHelper.KeyValueSeparatorGroupChar + QueueParameterHelper.HashKey + QueueParameterHelper.KeyValueSeparatorChar + result.hashCode;
@@ -102,6 +105,7 @@ var QueueParameterHelper = /** @class */ (function () {
     QueueParameterHelper.EventIdKey = "e";
     QueueParameterHelper.QueueIdKey = "q";
     QueueParameterHelper.RedirectTypeKey = "rt";
+    QueueParameterHelper.HashedIPKey = 'hip';
     QueueParameterHelper.KeyValueSeparatorChar = '_';
     QueueParameterHelper.KeyValueSeparatorGroupChar = '~';
     return QueueParameterHelper;

@@ -11,7 +11,6 @@ export class UserInQueueStateCookieRepository {
     private static readonly _FixedCookieValidityMinutesKey = "FixedValidityMins";
     private static readonly _IsCookieHttpOnly = "IsCookieHttpOnly";
     private static readonly _IsCookieSecure = "IsCookieSecure";
-    private static readonly _CookieSameSiteValue = "CookieSameSiteValue";
 
     constructor(private httpContextProvider: IHttpContextProvider) {
     }
@@ -26,7 +25,6 @@ export class UserInQueueStateCookieRepository {
                  cookieDomain: string,
                  isHttpOnly: boolean,
                  isSecure: boolean,
-                 sameSiteValue: string,
                  redirectType: string,
                  secretKey: string) {
         isHttpOnly = isHttpOnly == null ? false : isHttpOnly;
@@ -39,7 +37,6 @@ export class UserInQueueStateCookieRepository {
             cookieDomain,
             isHttpOnly,
             isSecure,
-            sameSiteValue,
             secretKey);
     }
 
@@ -51,7 +48,6 @@ export class UserInQueueStateCookieRepository {
         cookieDomain: string,
         isHttpOnly: boolean,
         isSecure: boolean,
-        sameSiteValue: string,
         secretKey: string) {
         let cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
 
@@ -81,8 +77,7 @@ export class UserInQueueStateCookieRepository {
             cookieDomain,
             expire,
             isHttpOnly,
-            isSecure,
-            sameSiteValue);
+            isSecure);
     }
 
     public getState(eventId: string, cookieValidityMinutes: number, secretKey: string, validateTime: boolean): StateInfo {
@@ -154,11 +149,10 @@ export class UserInQueueStateCookieRepository {
     public cancelQueueCookie(eventId: string,
                              cookieDomain: string,
                              isCookieHttpOnly: boolean,
-                             isSecure: boolean,
-                             sameSiteValue: string) {
+                             isSecure: boolean) {
         const cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
         this.httpContextProvider.getHttpResponse()
-            .setCookie(cookieKey, "", cookieDomain, 0, isCookieHttpOnly, isSecure, sameSiteValue);
+            .setCookie(cookieKey, "", cookieDomain, 0, isCookieHttpOnly, isSecure);
     }
 
     public reissueQueueCookie(eventId: string,
@@ -188,7 +182,6 @@ export class UserInQueueStateCookieRepository {
             cookieDomain,
             cookieValues[UserInQueueStateCookieRepository._IsCookieHttpOnly],
             cookieValues[UserInQueueStateCookieRepository._IsCookieSecure],
-            cookieValues[UserInQueueStateCookieRepository._CookieSameSiteValue],
             secretKey);
     }
 

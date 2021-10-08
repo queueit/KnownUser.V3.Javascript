@@ -16,6 +16,7 @@ export declare class QueueUrlParams {
     queueITTokenWithoutHash: string;
     queueId: string;
     redirectType: string;
+    hashedIp: string;
 }
 export declare class QueueParameterHelper {
     static readonly TimeStampKey = "ts";
@@ -25,6 +26,7 @@ export declare class QueueParameterHelper {
     static readonly EventIdKey = "e";
     static readonly QueueIdKey = "q";
     static readonly RedirectTypeKey = "rt";
+    static readonly HashedIPKey = "hip";
     static readonly KeyValueSeparatorChar = "_";
     static readonly KeyValueSeparatorGroupChar = "~";
     static extractQueueParams(queueitToken: string): QueueUrlParams;
