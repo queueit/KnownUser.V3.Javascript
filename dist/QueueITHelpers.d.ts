@@ -1,4 +1,9 @@
 import { RequestValidationResult } from './Models';
+export declare enum ErrorCode {
+    Hash = "hash",
+    Timestamp = "timestamp",
+    CookieSessionState = "connector/sessionstate"
+}
 export declare class Utils {
     static encodeUrl(url: string): string;
     static decodeUrl(url: string): string;

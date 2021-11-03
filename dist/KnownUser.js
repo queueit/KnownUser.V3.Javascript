@@ -144,7 +144,7 @@ var KnownUser = /** @class */ (function () {
         result.isAjaxResult = this.isQueueAjaxCall(httpContextProvider);
         return result;
     };
-    KnownUser.extendQueueCookie = function (eventId, cookieValidityMinute, cookieDomain, secretKey, httpContextProvider) {
+    KnownUser.extendQueueCookie = function (eventId, cookieValidityMinute, cookieDomain, isCookieHttpOnly, isCookieSecure, secretKey, httpContextProvider) {
         if (!eventId)
             throw new Models_1.KnownUserException("eventId can not be null or empty.");
         if (!secretKey)
@@ -152,7 +152,7 @@ var KnownUser = /** @class */ (function () {
         if (cookieValidityMinute <= 0)
             throw new Models_1.KnownUserException("cookieValidityMinute should be integer greater than 0.");
         var userInQueueService = this.getUserInQueueService(httpContextProvider);
-        userInQueueService.extendQueueCookie(eventId, cookieValidityMinute, cookieDomain, secretKey);
+        userInQueueService.extendQueueCookie(eventId, cookieValidityMinute, cookieDomain, isCookieHttpOnly, isCookieSecure, secretKey);
     };
     KnownUser.resolveQueueRequestByLocalConfig = function (targetUrl, queueitToken, queueConfig, customerId, secretKey, httpContextProvider) {
         var debugEntries = {};
@@ -194,8 +194,8 @@ var KnownUser = /** @class */ (function () {
                 throw new Models_1.KnownUserException("currentUrlWithoutQueueITToken can not be null or empty.");
             if (!customerIntegrationInfo || !customerIntegrationInfo.Version)
                 throw new Models_1.KnownUserException("integrationsConfigString can not be null or empty.");
-            var configEvaluater = new IntegrationConfigHelpers.IntegrationEvaluator();
-            var matchedConfig = configEvaluater.getMatchedIntegrationConfig(customerIntegrationInfo, currentUrlWithoutQueueITToken, httpContextProvider.getHttpRequest());
+            var configEvaluator = new IntegrationConfigHelpers.IntegrationEvaluator();
+            var matchedConfig = configEvaluator.getMatchedIntegrationConfig(customerIntegrationInfo, currentUrlWithoutQueueITToken, httpContextProvider.getHttpRequest());
             if (connectorDiagnostics.isEnabled) {
                 debugEntries["MatchedConfig"] = matchedConfig ? matchedConfig.Name : "NULL";
             }

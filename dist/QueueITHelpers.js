@@ -1,7 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ConnectorDiagnostics = exports.CookieHelper = exports.QueueParameterHelper = exports.QueueUrlParams = exports.Utils = void 0;
+exports.ConnectorDiagnostics = exports.CookieHelper = exports.QueueParameterHelper = exports.QueueUrlParams = exports.Utils = exports.ErrorCode = void 0;
 var Models_1 = require("./Models");
+var ErrorCode;
+(function (ErrorCode) {
+    ErrorCode["Hash"] = "hash";
+    ErrorCode["Timestamp"] = "timestamp";
+    ErrorCode["CookieSessionState"] = "connector/sessionstate";
+})(ErrorCode = exports.ErrorCode || (exports.ErrorCode = {}));
 var Utils = /** @class */ (function () {
     function Utils() {
     }
@@ -117,8 +123,7 @@ var CookieHelper = /** @class */ (function () {
     CookieHelper.toMapFromValue = function (cookieValue) {
         try {
             var result = {};
-            var decoded = cookieValue;
-            var items = decoded.split('&');
+            var items = cookieValue.split('&');
             for (var _i = 0, items_1 = items; _i < items_1.length; _i++) {
                 var item = items_1[_i];
                 var keyValue = item.split('=');
@@ -169,11 +174,11 @@ var ConnectorDiagnostics = /** @class */ (function () {
             return diagnostics;
         }
         if (Utils.generateSHA256Hash(secretKey, qParams.queueITTokenWithoutHash) != qParams.hashCode) {
-            diagnostics.setStateWithTokenError(customerId, "hash");
+            diagnostics.setStateWithTokenError(customerId, ErrorCode.Hash);
             return diagnostics;
         }
         if (qParams.timeStamp < Utils.getCurrentTime()) {
-            diagnostics.setStateWithTokenError(customerId, "timestamp");
+            diagnostics.setStateWithTokenError(customerId, ErrorCode.Timestamp);
             return diagnostics;
         }
         diagnostics.isEnabled = true;

@@ -1,10 +1,10 @@
-import {Utils, QueueUrlParams, QueueParameterHelper} from './QueueITHelpers'
+import {Utils, QueueUrlParams, QueueParameterHelper, ErrorCode} from './QueueITHelpers'
 import {ActionTypes, RequestValidationResult, QueueEventConfig, CancelEventConfig} from './Models'
-import {UserInQueueStateCookieRepository} from './UserInQueueStateCookieRepository'
+import {StateInfo, UserInQueueStateCookieRepository} from './UserInQueueStateCookieRepository'
 import {IHttpContextProvider} from './HttpContextProvider';
 
 export class UserInQueueService {
-    static readonly SDK_VERSION = "v3-javascript-" + "3.7.3";
+    static readonly SDK_VERSION = "v3-javascript-" + "3.7.4";
 
     constructor(private httpContextProvider: IHttpContextProvider, private userInQueueStateRepository: UserInQueueStateCookieRepository) {
     }
@@ -23,6 +23,7 @@ export class UserInQueueService {
             config.isCookieHttpOnly,
             config.isCookieSecure,
             queueParams.redirectType,
+            queueParams.hashedIp,
             secretKey);
 
         return new RequestValidationResult(
@@ -40,16 +41,24 @@ export class UserInQueueService {
         targetUrl: string,
         config: QueueEventConfig,
         qParams: QueueUrlParams,
-        errorCode: string)
+        errorCode: string,
+        state: StateInfo)
         : RequestValidationResult {
 
-        const query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName) +
-            `&queueittoken=${qParams.queueITToken}` +
+        const queueItTokenParam = qParams ? `&queueittoken=${qParams.queueITToken}` : '';
+        let query = this.getQueryString(customerId,
+            config.eventId,
+            config.version,
+            config.culture,
+            config.layoutName,
+            config.actionName,
+            state.getInvalidCookieReason()
+            ) +
+            queueItTokenParam +
             `&ts=${Utils.getCurrentTime()}` +
             (targetUrl ? `&t=${Utils.encodeUrl(targetUrl)}` : "");
 
         const uriPath = `error/${errorCode}/`;
-
         const redirectUrl = this.generateRedirectUrl(config.queueDomain, uriPath, query);
 
         return new RequestValidationResult(
@@ -65,7 +74,8 @@ export class UserInQueueService {
     private getQueueResult(
         targetUrl: string,
         config: QueueEventConfig,
-        customerId: string)
+        customerId: string,
+        state: StateInfo)
         : RequestValidationResult {
 
         let query = this.getQueryString(customerId,
@@ -94,20 +104,24 @@ export class UserInQueueService {
         configVersion: number,
         culture: string | null,
         layoutName: string | null,
-        actionName: string | null)
+        actionName: string | null,
+        invalidCookieReason?: string)
         : string {
         const queryStringList = new Array<string>();
         queryStringList.push(`c=${Utils.encodeUrl(customerId)}`);
         queryStringList.push(`e=${Utils.encodeUrl(eventId)}`);
         queryStringList.push(`ver=${UserInQueueService.SDK_VERSION}`);
         queryStringList.push(`cver=${configVersion}`);
-        queryStringList.push(`man=${Utils.encodeUrl(actionName)}`)
+        queryStringList.push(`man=${Utils.encodeUrl(actionName)}`);
 
         if (culture)
             queryStringList.push("cid=" + Utils.encodeUrl(culture));
 
         if (layoutName)
             queryStringList.push("l=" + Utils.encodeUrl(layoutName));
+
+        if (invalidCookieReason)
+            queryStringList.push("icr=" + Utils.encodeUrl(invalidCookieReason));
 
         return queryStringList.join("&");
     }
@@ -137,6 +151,7 @@ export class UserInQueueService {
                     config.isCookieHttpOnly,
                     config.isCookieSecure,
                     state.redirectType,
+                    state.hashedIp,
                     secretKey);
             }
             return new RequestValidationResult(
@@ -148,22 +163,24 @@ export class UserInQueueService {
                 config.actionName
             );
         }
-        const queueParams = QueueParameterHelper.extractQueueParams(queueitToken);
+        const queueTokenParams = QueueParameterHelper.extractQueueParams(queueitToken);
 
         let requestValidationResult: RequestValidationResult;
         let isTokenValid = false;
 
-        if (queueParams != null) {
-            const tokenValidationResult = this.validateToken(config, queueParams, secretKey);
+        if (queueTokenParams) {
+            const tokenValidationResult = this.validateToken(config, queueTokenParams, secretKey);
             isTokenValid = tokenValidationResult.isValid;
 
             if (isTokenValid) {
-                requestValidationResult = this.getValidTokenResult(config, queueParams, secretKey);
+                requestValidationResult = this.getValidTokenResult(config, queueTokenParams, secretKey);
             } else {
-                requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueParams, tokenValidationResult.errorCode);
+                requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueTokenParams, tokenValidationResult.errorCode, state);
             }
+        } else if (state.isBoundToAnotherIp){
+            requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueTokenParams, ErrorCode.CookieSessionState, state);
         } else {
-            requestValidationResult = this.getQueueResult(targetUrl, config, customerId);
+            requestValidationResult = this.getQueueResult(targetUrl, config, customerId, state);
         }
 
         if (state.isFound && !isTokenValid) {
@@ -192,7 +209,12 @@ export class UserInQueueService {
                 config.isCookieHttpOnly,
                 config.isCookieSecure);
 
-            const query = this.getQueryString(customerId, config.eventId, config.version, null, null, config.actionName) +
+            const query = this.getQueryString(customerId,
+                config.eventId,
+                config.version,
+                null,
+                null,
+                config.actionName) +
                 (targetUrl ? "&r=" + Utils.encodeUrl(targetUrl) : "");
 
             let uriPath = `cancel/${customerId}/${config.eventId}`;
@@ -224,8 +246,15 @@ export class UserInQueueService {
         eventId: string,
         cookieValidityMinutes: number,
         cookieDomain: string,
+        isCookieHttpOnly: boolean,
+        isCookieSecure: boolean,
         secretKey: string) {
-        this.userInQueueStateRepository.reissueQueueCookie(eventId, cookieValidityMinutes, cookieDomain, secretKey)
+        this.userInQueueStateRepository.reissueQueueCookie(eventId,
+            cookieValidityMinutes,
+            cookieDomain,
+            isCookieHttpOnly,
+            isCookieSecure,
+            secretKey)
     }
 
     public getIgnoreResult(

@@ -104,8 +104,8 @@ export class KnownUser {
         if (queueConfig.cookieValidityMinute <= 0)
             throw new KnownUserException("queueConfig.cookieValidityMinute should be integer greater than 0.");
 
-        var userInQueueService = this.getUserInQueueService(httpContextProvider);
-        var result = userInQueueService.validateQueueRequest(targetUrl, queueitToken, queueConfig, customerId, secretKey);
+        const userInQueueService = this.getUserInQueueService(httpContextProvider);
+        const result = userInQueueService.validateQueueRequest(targetUrl, queueitToken, queueConfig, customerId, secretKey);
         result.isAjaxResult = this.isQueueAjaxCall(httpContextProvider);
 
         return result;
@@ -228,6 +228,8 @@ export class KnownUser {
         eventId: string,
         cookieValidityMinute: number,
         cookieDomain: string,
+        isCookieHttpOnly: boolean,
+        isCookieSecure: boolean,
         secretKey: string,
         httpContextProvider: IHttpContextProvider) {
         if (!eventId)
@@ -237,8 +239,13 @@ export class KnownUser {
         if (cookieValidityMinute <= 0)
             throw new KnownUserException("cookieValidityMinute should be integer greater than 0.");
 
-        var userInQueueService = this.getUserInQueueService(httpContextProvider);
-        userInQueueService.extendQueueCookie(eventId, cookieValidityMinute, cookieDomain, secretKey);
+        const userInQueueService = this.getUserInQueueService(httpContextProvider);
+        userInQueueService.extendQueueCookie(eventId,
+            cookieValidityMinute,
+            cookieDomain,
+            isCookieHttpOnly,
+            isCookieSecure,
+            secretKey);
     }
 
     public static resolveQueueRequestByLocalConfig(
@@ -302,9 +309,9 @@ export class KnownUser {
             if (!customerIntegrationInfo || !customerIntegrationInfo.Version)
                 throw new KnownUserException("integrationsConfigString can not be null or empty.");
 
-            var configEvaluater = new IntegrationConfigHelpers.IntegrationEvaluator();
+            const configEvaluator = new IntegrationConfigHelpers.IntegrationEvaluator();
 
-            var matchedConfig = configEvaluater.getMatchedIntegrationConfig(
+            const matchedConfig = configEvaluator.getMatchedIntegrationConfig(
                 customerIntegrationInfo,
                 currentUrlWithoutQueueITToken,
                 httpContextProvider.getHttpRequest());

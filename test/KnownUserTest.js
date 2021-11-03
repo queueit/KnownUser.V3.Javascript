@@ -3,6 +3,8 @@ var QueueITHelpers = require('./../dist/QueueITHelpers')
 var UserInQueueService = require('./../dist/UserInQueueService')
 var Models = require('./../dist/Models')
 var assert = require('assert');
+const chai = require('chai');
+chai.use(require('chai-string'));
 const expect = require('chai').expect;
 
 var utils = QueueITHelpers.Utils;
@@ -71,12 +73,19 @@ userInQueueServiceMock.validateCancelRequest = function (targetUrl, cancelConfig
         return userInQueueServiceMock.cancelRequestCalls;
     }
 };
-userInQueueServiceMock.extendQueueCookie = function (eventId, cookieValidityMinute, secretKey) {
+userInQueueServiceMock.extendQueueCookie = function (eventId,
+                                                     cookieValidityMinute,
+                                                     cookieDomain,
+                                                     isCookieHttpOnly,
+                                                     isCookieSecure,
+                                                     secretKey) {
     this.extendQueueCookieCall =
         {
             method: "extendQueueCookie",
             eventId: eventId,
             cookieValidityMinute: cookieValidityMinute,
+            isCookieHttpOnly,
+            isCookieSecure,
             secretKey: secretKey
         };
 
@@ -99,7 +108,7 @@ userInQueueServiceMock.reset = function () {
     this.validateQueueRequestResultRaiseException = false;
 };
 
-httpRequestMockHeaders = {};
+let httpRequestMockHeaders = {};
 var httpRequestMock = {
     getHeader: function (name) {
         var key = name.toLowerCase();
@@ -113,7 +122,7 @@ var httpRequestMock = {
     }
 };
 
-httpResponseMockCookies = {};
+let httpResponseMockCookies = {};
 let httpResponseMock = {
     setCookie: function (name, value, domain, expire, httpOnly, isSecure) {
         httpResponseMockCookies[name] = {value, domain, expire, httpOnly, isSecure};
@@ -332,7 +341,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.extendQueueCookie(null, 0, null, null, httpContextProvider);
+            knownUser.extendQueueCookie(null, 0, null, false, false, null, httpContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "eventId can not be null or empty.";
         }
@@ -350,14 +359,14 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.extendQueueCookie("eventId", -1, "cookiedomain", "secretkey", httpContextProvider);
+            knownUser.extendQueueCookie("eventId", -1, "cookiedomain", false, false, "secretkey", httpContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "cookieValidityMinute should be integer greater than 0.";
         }
 
         //Assert
         assert(Object.keys(userInQueueServiceMock.extendQueueCookieCall).length === 0);
-        assert(exceptionWasThrown);
+        expect(exceptionWasThrown).to.be.true;
     },
 
     test_extendQueueCookie_NullSecretKey: function () {
@@ -368,7 +377,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.extendQueueCookie("eventId", 20, "cookiedomain", null, httpContextProvider);
+            knownUser.extendQueueCookie("eventId", 20, "cookiedomain", false, false, null, httpContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "secretKey can not be null or empty.";
         }
@@ -384,12 +393,14 @@ var KnownUserTest = {
         resetMocks();
 
         //Act
-        knownUser.extendQueueCookie("eventId", 20, "cookiedomain", "secretKey");
+        knownUser.extendQueueCookie("eventId", 20, "cookiedomain", true, true, "secretKey");
 
         //Assert
         assert(userInQueueServiceMock.extendQueueCookieCall.method === "extendQueueCookie");
         assert(userInQueueServiceMock.extendQueueCookieCall.eventId, "eventId");
         assert(userInQueueServiceMock.extendQueueCookieCall.cookieValidityMinute, "20");
+        assert(userInQueueServiceMock.extendQueueCookieCall.isCookieHttpOnly, true);
+        assert(userInQueueServiceMock.extendQueueCookieCall.isCookieSecure, true);
         assert(userInQueueServiceMock.extendQueueCookieCall.secretKey, "secretKey");
     },
 

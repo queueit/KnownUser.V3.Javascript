@@ -13,7 +13,7 @@ export interface IHttpRequest {
             cookieValue: string,
             domain: string,
             expiration: number,
-            httpOnly: boolean,
+            isHttpOnly: boolean,
             isSecure: boolean);
     }
 

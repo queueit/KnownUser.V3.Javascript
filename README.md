@@ -157,7 +157,7 @@ function initializeExpressHttpContextProvider(req, res) {
         },
         getHttpResponse: function () {
             var httpResponse = {
-                setCookie: function (cookieName, cookieValue, domain, expiration, httpOnly, isSecure) {
+                setCookie: function (cookieName, cookieValue, domain, expiration, isCookieHttpOnly, isCookieSecure) {
                     if (domain === "")
                         domain = null;
 
@@ -172,8 +172,8 @@ function initializeExpressHttpContextProvider(req, res) {
                             expires: expirationDate,
                             path: "/",
                             domain: domain,
-                            secure: isSecure,
-                            httpOnly: httpOnly
+                            secure: isCookieSecure,
+                            httpOnly: isCookieHttpOnly
                         });
                 }
             };
