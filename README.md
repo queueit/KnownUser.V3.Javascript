@@ -70,8 +70,10 @@ router.get('/', function (req, res, next) {
 
       if (validationResult.isAjaxResult) {
         // In case of ajax call send the user to the queue by sending a custom queue-it header and redirecting user to queue from javascript
-        res.set(validationResult.getAjaxQueueRedirectHeaderKey(), validationResult.getAjaxRedirectUrl());
-
+	const headerName = validationResult.getAjaxQueueRedirectHeaderKey();
+        res.set(headerName, validationResult.getAjaxRedirectUrl());
+	res.set('Access-Control-Expose-Headers', headerName);
+	
         // Render page
         res.render('index', {
           node_version: process.version,
@@ -271,7 +273,9 @@ router.get('/', function (req, res, next) {
 
       if (validationResult.isAjaxResult) {
         // In case of ajax call send the user to the queue by sending a custom queue-it header and redirecting user to queue from javascript
-        res.set(validationResult.getAjaxQueueRedirectHeaderKey(), validationResult.getAjaxRedirectUrl());
+	const headerName = validationResult.getAjaxQueueRedirectHeaderKey();
+        res.set(headerName, validationResult.getAjaxRedirectUrl());
+	res.set('Access-Control-Expose-Headers', headerName);
 
         // Render page
         res.render('index', {
