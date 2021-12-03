@@ -328,3 +328,26 @@ function getRequestUrlWithoutToken(requestUrl){
 
 module.exports = router;
 ```
+
+
+## Request body trigger (advanced)
+
+The connector supports triggering on request body content. An example could be a POST call with specific item ID where you want end-users to queue up for.
+For this to work, you will need to contact Queue-it support or enable request body triggers in your integration settings in your GO Queue-it platform account.
+Once enabled you will need to update your integration so request body is available for the connector.  
+You may need to add the following middleware in your express app:
+
+```javascript
+const bodyParser = require('body-parser');
+
+// ... in your app setup
+
+app.use(bodyParser.text());
+```
+
+And then add this to the httpRequest object in your http context provider:
+```javascript
+getRequestBodyAsString: function () {
+  return JSON.stringify(req.body.toString());
+}
+```
