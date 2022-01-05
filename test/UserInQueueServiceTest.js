@@ -1,5 +1,5 @@
-const {QueueItAcceptedCookie, StateInfo, CookieValidationResult} = require("../src/UserInQueueStateCookieRepository");
-const {CancelEventConfig, QueueEventConfig} = require('../src/Models')
+const {QueueItAcceptedCookie, StateInfo, CookieValidationResult} = require("../dist/UserInQueueStateCookieRepository");
+const {CancelEventConfig, QueueEventConfig} = require('../dist/Models')
 const QueueITHelpers = require('./../dist/QueueITHelpers')
 const UserInQueueService = require('./../dist/UserInQueueService')
 const {assertUrlMatches, assertTimestamp} = require('./assertions');
@@ -8,6 +8,7 @@ const chai = require('chai');
 chai.use(require('chai-string'));
 const expect = require('chai').expect;
 
+const MockClientIP = "127.0.0.2";
 const utils = QueueITHelpers.Utils;
 const SDK_VERSION = UserInQueueService.UserInQueueService.SDK_VERSION;
 utils.generateSHA256Hash = function (secretKey, stringToHash) {
@@ -121,7 +122,7 @@ function newExpiredCookieState({queueId = "queueId", cookie = null} = {}) {
 }
 
 function newIpMismatchedCookieState({queueId = "queueId", cookie = null} = {}) {
-    return new StateInfo(queueId, 0, null, null, CookieValidationResult.IpBindingMismatch, cookie);
+    return new StateInfo(queueId, 0, null, null, CookieValidationResult.IpBindingMismatch, cookie, MockClientIP);
 }
 
 const UserInQueueServiceTest = {
@@ -149,7 +150,7 @@ const UserInQueueServiceTest = {
             ver: SDK_VERSION,
             man: 'unspecified',
             t: 'url',
-            icr: utils.encodeUrl(`ip,hip:${cookie.hashedIp},q:queueId,st:${issueTime}`)
+            icr: utils.encodeUrl(`ip,hip:${cookie.hashedIp},cip:${utils.bin2hex(MockClientIP)},q:queueId,st:${issueTime}`)
         });
     },
 
@@ -177,7 +178,7 @@ const UserInQueueServiceTest = {
             ver: SDK_VERSION,
             man: 'unspecified',
             t: 'url',
-            icr: utils.encodeUrl(`ip,hip:${cookie.hashedIp},q:queueId,st:${issueTime}`)
+            icr: utils.encodeUrl(`ip,hip:${cookie.hashedIp},cip:${utils.bin2hex(MockClientIP)},q:queueId,st:${issueTime}`)
         });
     },
 

@@ -37,6 +37,24 @@ export class Utils {
     static getCurrentTime(): number {
         return Math.floor(new Date().getTime() / 1000);
     }
+
+    static bin2hex(s: string):string {
+    
+        var i: number;
+        var l: number;
+        var o: string = '';
+        var n: string;
+    
+        s += '';
+    
+        for (i = 0, l = s.length; i < l; i++) {
+            n = s.charCodeAt(i)
+                .toString(16)
+            o += n.length < 2 ? '0' + n : n
+        }
+    
+        return o;
+    }
 }
 
 export class QueueUrlParams {

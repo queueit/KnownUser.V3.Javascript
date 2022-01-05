@@ -184,8 +184,8 @@ export class KnownUser {
             matchedConfig.ExtendCookieValidity,
             matchedConfig.CookieValidityMinute,
             matchedConfig.CookieDomain,
-            matchedConfig.IsCookieHttpOnly,
-            matchedConfig.IsCookieSecure,
+            matchedConfig.IsCookieHttpOnly || false,
+            matchedConfig.IsCookieSecure || false,
             customerIntegrationInfo.Version,
             matchedConfig.Name
         );
@@ -205,8 +205,8 @@ export class KnownUser {
             matchedConfig.EventId,
             matchedConfig.QueueDomain,
             matchedConfig.CookieDomain,
-            matchedConfig.IsCookieHttpOnly,
-            matchedConfig.IsCookieSecure,
+            matchedConfig.IsCookieHttpOnly || false,
+            matchedConfig.IsCookieSecure || false,
             customerIntegrationInfo.Version,
             matchedConfig.Name
         );

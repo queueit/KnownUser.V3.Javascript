@@ -10,6 +10,7 @@ export declare class Utils {
     static generateSHA256Hash(secretKey: string, stringToHash: string): string;
     static endsWith(str: string, search: string): boolean;
     static getCurrentTime(): number;
+    static bin2hex(s: string): string;
 }
 export declare class QueueUrlParams {
     timeStamp: number;

@@ -33,9 +33,6 @@ export declare class QueueItAcceptedCookie {
 export declare class UserInQueueStateCookieRepository {
     private httpContextProvider;
     private static readonly _QueueITDataKey;
-    private static readonly _IsCookieHttpOnly;
-    private static readonly _IsCookieSecure;
-    private static readonly _HashedIpKey;
     constructor(httpContextProvider: IHttpContextProvider);
     static getCookieKey(eventId: string): string;
     store(eventId: string, queueId: string, fixedCookieValidityMinutes: number | null, cookieDomain: string, isCookieHttpOnly: boolean, isCookieSecure: boolean, redirectType: string, hashedIp: string | null, secretKey: string): void;
@@ -53,7 +50,8 @@ export declare class StateInfo {
     hashedIp: string | null;
     cookieValidationResult: CookieValidationResult;
     cookie: QueueItAcceptedCookie;
-    constructor(queueId: string, fixedCookieValidityMinutes: number | null, redirectType: string, hashedIp: string | null, cookieValidationResult: CookieValidationResult, cookie: QueueItAcceptedCookie);
+    clientIp: string | null;
+    constructor(queueId: string, fixedCookieValidityMinutes: number | null, redirectType: string, hashedIp: string | null, cookieValidationResult: CookieValidationResult, cookie: QueueItAcceptedCookie, clientIp: string | null);
     get isValid(): boolean;
     get isFound(): boolean;
     get isBoundToAnotherIp(): boolean;

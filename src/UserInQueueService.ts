@@ -4,7 +4,7 @@ import {StateInfo, UserInQueueStateCookieRepository} from './UserInQueueStateCoo
 import {IHttpContextProvider} from './HttpContextProvider';
 
 export class UserInQueueService {
-    static readonly SDK_VERSION = "v3-javascript-" + "3.7.4";
+    static readonly SDK_VERSION = "v3-javascript-" + "3.7.5";
 
     constructor(private httpContextProvider: IHttpContextProvider, private userInQueueStateRepository: UserInQueueStateCookieRepository) {
     }

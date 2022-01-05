@@ -62,9 +62,6 @@ export class QueueItAcceptedCookie {
 
 export class UserInQueueStateCookieRepository {
     private static readonly _QueueITDataKey = "QueueITAccepted-SDFrts345E-V3";
-    private static readonly _IsCookieHttpOnly = "IsCookieHttpOnly";
-    private static readonly _IsCookieSecure = "IsCookieSecure";
-    private static readonly _HashedIpKey = "Hip";
 
     constructor(private httpContextProvider: IHttpContextProvider) {
     }
@@ -154,17 +151,18 @@ export class UserInQueueStateCookieRepository {
 
     public getState(eventId: string, cookieValidityMinutes: number, secretKey: string, validateTime: boolean): StateInfo {
         let qitAcceptedCookie: QueueItAcceptedCookie = null;
+        const clientIp = this.httpContextProvider.getHttpRequest().getUserHostAddress();
         try {
             const cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
             const cookie = this.httpContextProvider.getHttpRequest().getCookieValue(cookieKey);
-
+            
             if (!cookie)
-                return new StateInfo("", null, "", null, CookieValidationResult.NotFound, null);
-
+                return new StateInfo("", null, "", null, CookieValidationResult.NotFound, null, clientIp);
+                
             qitAcceptedCookie = QueueItAcceptedCookie.fromCookieHeader(cookie);
             const cookieValidationResult = this.isCookieValid(secretKey, qitAcceptedCookie, eventId, cookieValidityMinutes, validateTime);
             if (cookieValidationResult != CookieValidationResult.Valid){
-                return new StateInfo("", null, "", qitAcceptedCookie.hashedIp, cookieValidationResult, qitAcceptedCookie);
+                return new StateInfo("", null, "", qitAcceptedCookie.hashedIp, cookieValidationResult, qitAcceptedCookie, clientIp);
             }
 
             return new StateInfo(
@@ -175,9 +173,10 @@ export class UserInQueueStateCookieRepository {
                 qitAcceptedCookie.redirectType,
                 qitAcceptedCookie.hashedIp,
                 CookieValidationResult.Valid,
-                qitAcceptedCookie);
+                qitAcceptedCookie, 
+                clientIp);
         } catch (ex) {
-            return new StateInfo("", null, "", qitAcceptedCookie?.hashedIp, CookieValidationResult.Error, qitAcceptedCookie);
+            return new StateInfo("", null, "", qitAcceptedCookie?.hashedIp, CookieValidationResult.Error, qitAcceptedCookie, clientIp);
         }
     }
 
@@ -294,7 +293,8 @@ export class StateInfo {
                 public redirectType: string,
                 public hashedIp: string | null,
                 public cookieValidationResult: CookieValidationResult,
-                public cookie: QueueItAcceptedCookie) {
+                public cookie: QueueItAcceptedCookie,
+                public clientIp: string | null) {
     }
 
     get isValid(): boolean {
@@ -335,6 +335,7 @@ export class StateInfo {
             case CookieValidationResult.IpBindingMismatch:
                 details.push("ip");
                 details.push(`hip:${this.cookie.hashedIp}`);
+                details.push(`cip:${Utils.bin2hex(this.clientIp)}`);
                 break;
         }
 
