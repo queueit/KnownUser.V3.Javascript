@@ -54,7 +54,7 @@ var UserInQueueStateCookieRepository = /** @class */ (function () {
         this.httpContextProvider = httpContextProvider;
     }
     UserInQueueStateCookieRepository.getCookieKey = function (eventId) {
-        return UserInQueueStateCookieRepository._QueueITDataKey + "_" + eventId;
+        return "".concat(UserInQueueStateCookieRepository._QueueITDataKey, "_").concat(eventId);
     };
     UserInQueueStateCookieRepository.prototype.store = function (eventId, queueId, fixedCookieValidityMinutes, cookieDomain, isCookieHttpOnly, isCookieSecure, redirectType, hashedIp, secretKey) {
         isCookieHttpOnly = isCookieHttpOnly == null ? false : isCookieHttpOnly;
@@ -207,7 +207,7 @@ var StateInfo = /** @class */ (function () {
         switch (this.cookieValidationResult) {
             case CookieValidationResult.HashMismatch:
                 details.push("hash");
-                details.push("h:" + this.cookie.storedHash);
+                details.push("h:".concat(this.cookie.storedHash));
                 break;
             case CookieValidationResult.Expired:
                 details.push("expired");
@@ -219,18 +219,18 @@ var StateInfo = /** @class */ (function () {
                 break;
             case CookieValidationResult.IpBindingMismatch:
                 details.push("ip");
-                details.push("hip:" + this.cookie.hashedIp);
-                details.push("cip:" + QueueITHelpers_1.Utils.bin2hex(this.clientIp));
+                details.push("hip:".concat(this.cookie.hashedIp));
+                details.push("cip:".concat(QueueITHelpers_1.Utils.bin2hex(this.clientIp)));
                 break;
         }
         if (this.isFound) {
             if (this.redirectType) {
-                details.push("r:" + this.redirectType);
+                details.push("r:".concat(this.redirectType));
             }
             if (this.queueId) {
-                details.push("q:" + this.queueId);
+                details.push("q:".concat(this.queueId));
             }
-            details.push("st:" + Date.now());
+            details.push("st:".concat(Date.now()));
         }
         return details.join(",");
     };

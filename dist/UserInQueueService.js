@@ -13,12 +13,12 @@ var UserInQueueService = /** @class */ (function () {
         return new Models_1.RequestValidationResult(Models_1.ActionTypes.QueueAction, config.eventId, queueParams.queueId, null, queueParams.redirectType, config.actionName);
     };
     UserInQueueService.prototype.getErrorResult = function (customerId, targetUrl, config, qParams, errorCode, state) {
-        var queueItTokenParam = qParams ? "&queueittoken=" + qParams.queueITToken : '';
+        var queueItTokenParam = qParams ? "&queueittoken=".concat(qParams.queueITToken) : '';
         var query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName, state.getInvalidCookieReason()) +
             queueItTokenParam +
-            ("&ts=" + QueueITHelpers_1.Utils.getCurrentTime()) +
-            (targetUrl ? "&t=" + QueueITHelpers_1.Utils.encodeUrl(targetUrl) : "");
-        var uriPath = "error/" + errorCode + "/";
+            "&ts=".concat(QueueITHelpers_1.Utils.getCurrentTime()) +
+            (targetUrl ? "&t=".concat(QueueITHelpers_1.Utils.encodeUrl(targetUrl)) : "");
+        var uriPath = "error/".concat(errorCode, "/");
         var redirectUrl = this.generateRedirectUrl(config.queueDomain, uriPath, query);
         return new Models_1.RequestValidationResult(Models_1.ActionTypes.QueueAction, config.eventId, null, redirectUrl, null, config.actionName);
     };
@@ -30,11 +30,11 @@ var UserInQueueService = /** @class */ (function () {
     };
     UserInQueueService.prototype.getQueryString = function (customerId, eventId, configVersion, culture, layoutName, actionName, invalidCookieReason) {
         var queryStringList = new Array();
-        queryStringList.push("c=" + QueueITHelpers_1.Utils.encodeUrl(customerId));
-        queryStringList.push("e=" + QueueITHelpers_1.Utils.encodeUrl(eventId));
-        queryStringList.push("ver=" + UserInQueueService.SDK_VERSION);
-        queryStringList.push("cver=" + configVersion);
-        queryStringList.push("man=" + QueueITHelpers_1.Utils.encodeUrl(actionName));
+        queryStringList.push("c=".concat(QueueITHelpers_1.Utils.encodeUrl(customerId)));
+        queryStringList.push("e=".concat(QueueITHelpers_1.Utils.encodeUrl(eventId)));
+        queryStringList.push("ver=".concat(UserInQueueService.SDK_VERSION));
+        queryStringList.push("cver=".concat(configVersion));
+        queryStringList.push("man=".concat(QueueITHelpers_1.Utils.encodeUrl(actionName)));
         if (culture)
             queryStringList.push("cid=" + QueueITHelpers_1.Utils.encodeUrl(culture));
         if (layoutName)
@@ -46,7 +46,7 @@ var UserInQueueService = /** @class */ (function () {
     UserInQueueService.prototype.generateRedirectUrl = function (queueDomain, uriPath, query) {
         if (!QueueITHelpers_1.Utils.endsWith(queueDomain, "/"))
             queueDomain = queueDomain + "/";
-        return "https://" + queueDomain + uriPath + "?" + query;
+        return "https://".concat(queueDomain).concat(uriPath, "?").concat(query);
     };
     UserInQueueService.prototype.validateQueueRequest = function (targetUrl, queueitToken, config, customerId, secretKey) {
         var state = this.userInQueueStateRepository.getState(config.eventId, config.cookieValidityMinute, secretKey, true);
@@ -87,9 +87,9 @@ var UserInQueueService = /** @class */ (function () {
             this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure);
             var query = this.getQueryString(customerId, config.eventId, config.version, null, null, config.actionName) +
                 (targetUrl ? "&r=" + QueueITHelpers_1.Utils.encodeUrl(targetUrl) : "");
-            var uriPath = "cancel/" + customerId + "/" + config.eventId;
+            var uriPath = "cancel/".concat(customerId, "/").concat(config.eventId);
             if (state.queueId) {
-                uriPath += "/" + state.queueId;
+                uriPath += "/".concat(state.queueId);
             }
             var redirectUrl = this.generateRedirectUrl(config.queueDomain, uriPath, query);
             return new Models_1.RequestValidationResult(Models_1.ActionTypes.CancelAction, config.eventId, state.queueId, redirectUrl, state.redirectType, config.actionName);

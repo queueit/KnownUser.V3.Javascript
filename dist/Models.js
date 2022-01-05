@@ -18,10 +18,10 @@ var QueueEventConfig = /** @class */ (function () {
         this.actionName = actionName;
     }
     QueueEventConfig.prototype.getString = function () {
-        return "EventId:" + this.eventId + "&Version:" + this.version + "&ActionName:" + this.actionName + "&QueueDomain:" + this.queueDomain +
-            ("&CookieDomain:" + this.cookieDomain + "&IsCookieHttpOnly:" + this.isCookieHttpOnly + "&IsCookieSecure:" + this.isCookieSecure) +
-            ("&ExtendCookieValidity:" + this.extendCookieValidity) +
-            ("&CookieValidityMinute:" + this.cookieValidityMinute + "&LayoutName:" + this.layoutName + "&Culture:" + this.culture);
+        return "EventId:".concat(this.eventId, "&Version:").concat(this.version, "&ActionName:").concat(this.actionName, "&QueueDomain:").concat(this.queueDomain) +
+            "&CookieDomain:".concat(this.cookieDomain, "&IsCookieHttpOnly:").concat(this.isCookieHttpOnly, "&IsCookieSecure:").concat(this.isCookieSecure) +
+            "&ExtendCookieValidity:".concat(this.extendCookieValidity) +
+            "&CookieValidityMinute:".concat(this.cookieValidityMinute, "&LayoutName:").concat(this.layoutName, "&Culture:").concat(this.culture);
     };
     return QueueEventConfig;
 }());
@@ -38,10 +38,10 @@ var CancelEventConfig = /** @class */ (function () {
         this.actionName = actionName;
     }
     CancelEventConfig.prototype.getString = function () {
-        return "EventId:" + this.eventId + "&Version:" + this.version +
-            ("&QueueDomain:" + this.queueDomain) +
-            ("&CookieDomain:" + this.cookieDomain + "&IsCookieHttpOnly:" + this.isCookieHttpOnly + "&IsCookieSecure:" + this.isCookieSecure) +
-            ("&ActionName:" + this.actionName);
+        return "EventId:".concat(this.eventId, "&Version:").concat(this.version) +
+            "&QueueDomain:".concat(this.queueDomain) +
+            "&CookieDomain:".concat(this.cookieDomain, "&IsCookieHttpOnly:").concat(this.isCookieHttpOnly, "&IsCookieSecure:").concat(this.isCookieSecure) +
+            "&ActionName:".concat(this.actionName);
     };
     return CancelEventConfig;
 }());

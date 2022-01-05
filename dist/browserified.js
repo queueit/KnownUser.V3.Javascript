@@ -571,10 +571,10 @@ var QueueEventConfig = /** @class */ (function () {
         this.actionName = actionName;
     }
     QueueEventConfig.prototype.getString = function () {
-        return "EventId:" + this.eventId + "&Version:" + this.version + "&ActionName:" + this.actionName + "&QueueDomain:" + this.queueDomain +
-            ("&CookieDomain:" + this.cookieDomain + "&IsCookieHttpOnly:" + this.isCookieHttpOnly + "&IsCookieSecure:" + this.isCookieSecure) +
-            ("&ExtendCookieValidity:" + this.extendCookieValidity) +
-            ("&CookieValidityMinute:" + this.cookieValidityMinute + "&LayoutName:" + this.layoutName + "&Culture:" + this.culture);
+        return "EventId:".concat(this.eventId, "&Version:").concat(this.version, "&ActionName:").concat(this.actionName, "&QueueDomain:").concat(this.queueDomain) +
+            "&CookieDomain:".concat(this.cookieDomain, "&IsCookieHttpOnly:").concat(this.isCookieHttpOnly, "&IsCookieSecure:").concat(this.isCookieSecure) +
+            "&ExtendCookieValidity:".concat(this.extendCookieValidity) +
+            "&CookieValidityMinute:".concat(this.cookieValidityMinute, "&LayoutName:").concat(this.layoutName, "&Culture:").concat(this.culture);
     };
     return QueueEventConfig;
 }());
@@ -591,10 +591,10 @@ var CancelEventConfig = /** @class */ (function () {
         this.actionName = actionName;
     }
     CancelEventConfig.prototype.getString = function () {
-        return "EventId:" + this.eventId + "&Version:" + this.version +
-            ("&QueueDomain:" + this.queueDomain) +
-            ("&CookieDomain:" + this.cookieDomain + "&IsCookieHttpOnly:" + this.isCookieHttpOnly + "&IsCookieSecure:" + this.isCookieSecure) +
-            ("&ActionName:" + this.actionName);
+        return "EventId:".concat(this.eventId, "&Version:").concat(this.version) +
+            "&QueueDomain:".concat(this.queueDomain) +
+            "&CookieDomain:".concat(this.cookieDomain, "&IsCookieHttpOnly:").concat(this.isCookieHttpOnly, "&IsCookieSecure:").concat(this.isCookieSecure) +
+            "&ActionName:".concat(this.actionName);
     };
     return CancelEventConfig;
 }());
@@ -756,7 +756,7 @@ var QueueParameterHelper = /** @class */ (function () {
                     break;
             }
         }
-        var hashWithPrefix = "" + QueueParameterHelper.KeyValueSeparatorGroupChar + QueueParameterHelper.HashKey + QueueParameterHelper.KeyValueSeparatorChar + result.hashCode;
+        var hashWithPrefix = "".concat(QueueParameterHelper.KeyValueSeparatorGroupChar).concat(QueueParameterHelper.HashKey).concat(QueueParameterHelper.KeyValueSeparatorChar).concat(result.hashCode);
         result.queueITTokenWithoutHash = result.queueITToken.replace(hashWithPrefix, "");
         return result;
     };
@@ -795,7 +795,7 @@ var CookieHelper = /** @class */ (function () {
         var values = new Array();
         for (var _i = 0, cookieValues_1 = cookieValues; _i < cookieValues_1.length; _i++) {
             var keyVal = cookieValues_1[_i];
-            values.push(keyVal.key + "=" + keyVal.value);
+            values.push("".concat(keyVal.key, "=").concat(keyVal.value));
         }
         return values.join("&");
     };
@@ -809,7 +809,7 @@ var ConnectorDiagnostics = /** @class */ (function () {
     }
     ConnectorDiagnostics.prototype.setStateWithTokenError = function (customerId, errorCode) {
         this.hasError = true;
-        var redirectUrl = "https://" + customerId + ".api2.queue-it.net/" + customerId + "/diagnostics/connector/error/?code=" + errorCode;
+        var redirectUrl = "https://".concat(customerId, ".api2.queue-it.net/").concat(customerId, "/diagnostics/connector/error/?code=").concat(errorCode);
         this.validationResult = new Models_1.RequestValidationResult("ConnectorDiagnosticsRedirect", null, null, redirectUrl, null, null);
     };
     ConnectorDiagnostics.prototype.setStateWithSetupError = function () {
@@ -860,12 +860,12 @@ var UserInQueueService = /** @class */ (function () {
         return new Models_1.RequestValidationResult(Models_1.ActionTypes.QueueAction, config.eventId, queueParams.queueId, null, queueParams.redirectType, config.actionName);
     };
     UserInQueueService.prototype.getErrorResult = function (customerId, targetUrl, config, qParams, errorCode, state) {
-        var queueItTokenParam = qParams ? "&queueittoken=" + qParams.queueITToken : '';
+        var queueItTokenParam = qParams ? "&queueittoken=".concat(qParams.queueITToken) : '';
         var query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName, state.getInvalidCookieReason()) +
             queueItTokenParam +
-            ("&ts=" + QueueITHelpers_1.Utils.getCurrentTime()) +
-            (targetUrl ? "&t=" + QueueITHelpers_1.Utils.encodeUrl(targetUrl) : "");
-        var uriPath = "error/" + errorCode + "/";
+            "&ts=".concat(QueueITHelpers_1.Utils.getCurrentTime()) +
+            (targetUrl ? "&t=".concat(QueueITHelpers_1.Utils.encodeUrl(targetUrl)) : "");
+        var uriPath = "error/".concat(errorCode, "/");
         var redirectUrl = this.generateRedirectUrl(config.queueDomain, uriPath, query);
         return new Models_1.RequestValidationResult(Models_1.ActionTypes.QueueAction, config.eventId, null, redirectUrl, null, config.actionName);
     };
@@ -877,11 +877,11 @@ var UserInQueueService = /** @class */ (function () {
     };
     UserInQueueService.prototype.getQueryString = function (customerId, eventId, configVersion, culture, layoutName, actionName, invalidCookieReason) {
         var queryStringList = new Array();
-        queryStringList.push("c=" + QueueITHelpers_1.Utils.encodeUrl(customerId));
-        queryStringList.push("e=" + QueueITHelpers_1.Utils.encodeUrl(eventId));
-        queryStringList.push("ver=" + UserInQueueService.SDK_VERSION);
-        queryStringList.push("cver=" + configVersion);
-        queryStringList.push("man=" + QueueITHelpers_1.Utils.encodeUrl(actionName));
+        queryStringList.push("c=".concat(QueueITHelpers_1.Utils.encodeUrl(customerId)));
+        queryStringList.push("e=".concat(QueueITHelpers_1.Utils.encodeUrl(eventId)));
+        queryStringList.push("ver=".concat(UserInQueueService.SDK_VERSION));
+        queryStringList.push("cver=".concat(configVersion));
+        queryStringList.push("man=".concat(QueueITHelpers_1.Utils.encodeUrl(actionName)));
         if (culture)
             queryStringList.push("cid=" + QueueITHelpers_1.Utils.encodeUrl(culture));
         if (layoutName)
@@ -893,7 +893,7 @@ var UserInQueueService = /** @class */ (function () {
     UserInQueueService.prototype.generateRedirectUrl = function (queueDomain, uriPath, query) {
         if (!QueueITHelpers_1.Utils.endsWith(queueDomain, "/"))
             queueDomain = queueDomain + "/";
-        return "https://" + queueDomain + uriPath + "?" + query;
+        return "https://".concat(queueDomain).concat(uriPath, "?").concat(query);
     };
     UserInQueueService.prototype.validateQueueRequest = function (targetUrl, queueitToken, config, customerId, secretKey) {
         var state = this.userInQueueStateRepository.getState(config.eventId, config.cookieValidityMinute, secretKey, true);
@@ -934,9 +934,9 @@ var UserInQueueService = /** @class */ (function () {
             this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure);
             var query = this.getQueryString(customerId, config.eventId, config.version, null, null, config.actionName) +
                 (targetUrl ? "&r=" + QueueITHelpers_1.Utils.encodeUrl(targetUrl) : "");
-            var uriPath = "cancel/" + customerId + "/" + config.eventId;
+            var uriPath = "cancel/".concat(customerId, "/").concat(config.eventId);
             if (state.queueId) {
-                uriPath += "/" + state.queueId;
+                uriPath += "/".concat(state.queueId);
             }
             var redirectUrl = this.generateRedirectUrl(config.queueDomain, uriPath, query);
             return new Models_1.RequestValidationResult(Models_1.ActionTypes.CancelAction, config.eventId, state.queueId, redirectUrl, state.redirectType, config.actionName);
@@ -1037,7 +1037,7 @@ var UserInQueueStateCookieRepository = /** @class */ (function () {
         this.httpContextProvider = httpContextProvider;
     }
     UserInQueueStateCookieRepository.getCookieKey = function (eventId) {
-        return UserInQueueStateCookieRepository._QueueITDataKey + "_" + eventId;
+        return "".concat(UserInQueueStateCookieRepository._QueueITDataKey, "_").concat(eventId);
     };
     UserInQueueStateCookieRepository.prototype.store = function (eventId, queueId, fixedCookieValidityMinutes, cookieDomain, isCookieHttpOnly, isCookieSecure, redirectType, hashedIp, secretKey) {
         isCookieHttpOnly = isCookieHttpOnly == null ? false : isCookieHttpOnly;
@@ -1190,7 +1190,7 @@ var StateInfo = /** @class */ (function () {
         switch (this.cookieValidationResult) {
             case CookieValidationResult.HashMismatch:
                 details.push("hash");
-                details.push("h:" + this.cookie.storedHash);
+                details.push("h:".concat(this.cookie.storedHash));
                 break;
             case CookieValidationResult.Expired:
                 details.push("expired");
@@ -1202,18 +1202,18 @@ var StateInfo = /** @class */ (function () {
                 break;
             case CookieValidationResult.IpBindingMismatch:
                 details.push("ip");
-                details.push("hip:" + this.cookie.hashedIp);
-                details.push("cip:" + QueueITHelpers_1.Utils.bin2hex(this.clientIp));
+                details.push("hip:".concat(this.cookie.hashedIp));
+                details.push("cip:".concat(QueueITHelpers_1.Utils.bin2hex(this.clientIp)));
                 break;
         }
         if (this.isFound) {
             if (this.redirectType) {
-                details.push("r:" + this.redirectType);
+                details.push("r:".concat(this.redirectType));
             }
             if (this.queueId) {
-                details.push("q:" + this.queueId);
+                details.push("q:".concat(this.queueId));
             }
-            details.push("st:" + Date.now());
+            details.push("st:".concat(Date.now()));
         }
         return details.join(",");
     };

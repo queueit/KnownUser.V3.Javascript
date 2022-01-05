@@ -113,7 +113,7 @@ var QueueParameterHelper = /** @class */ (function () {
                     break;
             }
         }
-        var hashWithPrefix = "" + QueueParameterHelper.KeyValueSeparatorGroupChar + QueueParameterHelper.HashKey + QueueParameterHelper.KeyValueSeparatorChar + result.hashCode;
+        var hashWithPrefix = "".concat(QueueParameterHelper.KeyValueSeparatorGroupChar).concat(QueueParameterHelper.HashKey).concat(QueueParameterHelper.KeyValueSeparatorChar).concat(result.hashCode);
         result.queueITTokenWithoutHash = result.queueITToken.replace(hashWithPrefix, "");
         return result;
     };
@@ -152,7 +152,7 @@ var CookieHelper = /** @class */ (function () {
         var values = new Array();
         for (var _i = 0, cookieValues_1 = cookieValues; _i < cookieValues_1.length; _i++) {
             var keyVal = cookieValues_1[_i];
-            values.push(keyVal.key + "=" + keyVal.value);
+            values.push("".concat(keyVal.key, "=").concat(keyVal.value));
         }
         return values.join("&");
     };
@@ -166,7 +166,7 @@ var ConnectorDiagnostics = /** @class */ (function () {
     }
     ConnectorDiagnostics.prototype.setStateWithTokenError = function (customerId, errorCode) {
         this.hasError = true;
-        var redirectUrl = "https://" + customerId + ".api2.queue-it.net/" + customerId + "/diagnostics/connector/error/?code=" + errorCode;
+        var redirectUrl = "https://".concat(customerId, ".api2.queue-it.net/").concat(customerId, "/diagnostics/connector/error/?code=").concat(errorCode);
         this.validationResult = new Models_1.RequestValidationResult("ConnectorDiagnosticsRedirect", null, null, redirectUrl, null, null);
     };
     ConnectorDiagnostics.prototype.setStateWithSetupError = function () {
