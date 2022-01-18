@@ -23,8 +23,12 @@ var Utils = /** @class */ (function () {
     Utils.decodeUrl = function (url) {
         return decodeURIComponent(url);
     };
-    Utils.generateSHA256Hash = function (secretKey, stringToHash) {
-        throw new Models_1.KnownUserException("Missing implementation for generateSHA256Hash");
+    Utils.generateSHA256Hash = function (secretKey, stringToHash, context) {
+        var cryptoProvider;
+        if (context && context.getCryptoProvider && (cryptoProvider = context.getCryptoProvider())) {
+            return cryptoProvider.getSha256Hash(secretKey, stringToHash);
+        }
+        throw Models_1.MissingSha256ImplementationException;
     };
     Utils.endsWith = function (str, search) {
         if (str === search)
@@ -173,7 +177,7 @@ var ConnectorDiagnostics = /** @class */ (function () {
         this.hasError = true;
         this.validationResult = new Models_1.RequestValidationResult("ConnectorDiagnosticsRedirect", null, null, "https://api2.queue-it.net/diagnostics/connector/error/?code=setup", null, null);
     };
-    ConnectorDiagnostics.verify = function (customerId, secretKey, queueitToken) {
+    ConnectorDiagnostics.verify = function (customerId, secretKey, queueitToken, context) {
         var diagnostics = new ConnectorDiagnostics();
         var qParams = QueueParameterHelper.extractQueueParams(queueitToken);
         if (qParams == null)
@@ -186,7 +190,7 @@ var ConnectorDiagnostics = /** @class */ (function () {
             diagnostics.setStateWithSetupError();
             return diagnostics;
         }
-        if (Utils.generateSHA256Hash(secretKey, qParams.queueITTokenWithoutHash) != qParams.hashCode) {
+        if (Utils.generateSHA256Hash(secretKey, qParams.queueITTokenWithoutHash, context) != qParams.hashCode) {
             diagnostics.setStateWithTokenError(customerId, ErrorCode.Hash);
             return diagnostics;
         }

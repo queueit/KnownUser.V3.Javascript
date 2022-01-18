@@ -26,9 +26,20 @@ function assertUrlMatches(actualUrl, expectedUrlWithoutQueryString, parameters) 
         const param = parameterNames[i];
         let expectedParamValue = parameters[param];
         let actualParamValue = actualQueryParameters[param];
-        actualParamValue = typeof actualParamValue == 'undefined' ? 'undefined' : actualParamValue.toString();
-        expectedParamValue = typeof expectedParamValue == 'undefined' ? 'undefined' : expectedParamValue.toString();
-        expect(actualParamValue).to.be.equal(expectedParamValue, `Parameter ${param}`)
+        let expectedUndefined = typeof expectedParamValue == 'undefined';
+        let actualIsUndefined = typeof actualParamValue == 'undefined';
+
+        if (expectedUndefined) {
+            expect(actualParamValue).to.be.undefined;
+        } else {
+            expectedParamValue = expectedParamValue.toString();
+            if (actualIsUndefined) {
+                expect(actualParamValue).to.be.equal(expectedParamValue, `Parameter ${param}`)
+            } else {
+                actualParamValue = actualParamValue.toString();
+                expect(actualParamValue).to.be.equal(expectedParamValue, `Parameter ${param}`)
+            }
+        }
     }
 }
 

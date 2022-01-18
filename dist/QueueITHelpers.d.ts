@@ -1,4 +1,5 @@
 import { RequestValidationResult } from './Models';
+import { IConnectorContextProvider } from "./ConnectorContextProvider";
 export declare enum ErrorCode {
     Hash = "hash",
     Timestamp = "timestamp",
@@ -7,7 +8,7 @@ export declare enum ErrorCode {
 export declare class Utils {
     static encodeUrl(url: string): string;
     static decodeUrl(url: string): string;
-    static generateSHA256Hash(secretKey: string, stringToHash: string): string;
+    static generateSHA256Hash(secretKey: string, stringToHash: string, context?: IConnectorContextProvider): string;
     static endsWith(str: string, search: string): boolean;
     static getCurrentTime(): number;
     static bin2hex(s: string): string;
@@ -50,5 +51,5 @@ export declare class ConnectorDiagnostics {
     validationResult: RequestValidationResult;
     private setStateWithTokenError;
     private setStateWithSetupError;
-    static verify(customerId: string, secretKey: string, queueitToken: string): ConnectorDiagnostics;
+    static verify(customerId: string, secretKey: string, queueitToken: string, context: IConnectorContextProvider): ConnectorDiagnostics;
 }

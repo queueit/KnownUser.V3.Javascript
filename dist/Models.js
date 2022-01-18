@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ActionTypes = exports.KnownUserException = exports.RequestValidationResult = exports.CancelEventConfig = exports.QueueEventConfig = void 0;
+exports.ActionTypes = exports.MissingSha256ImplementationException = exports.KnownUserException = exports.RequestValidationResult = exports.CancelEventConfig = exports.QueueEventConfig = void 0;
 var QueueITHelpers_1 = require("./QueueITHelpers");
 var QueueEventConfig = /** @class */ (function () {
     function QueueEventConfig(eventId, layoutName, culture, queueDomain, extendCookieValidity, cookieValidityMinute, cookieDomain, isCookieHttpOnly, isCookieSecure, version, actionName) {
@@ -77,6 +77,7 @@ var KnownUserException = /** @class */ (function () {
     return KnownUserException;
 }());
 exports.KnownUserException = KnownUserException;
+exports.MissingSha256ImplementationException = new KnownUserException("Missing implementation for generateSHA256Hash");
 var ActionTypes = /** @class */ (function () {
     function ActionTypes() {
     }

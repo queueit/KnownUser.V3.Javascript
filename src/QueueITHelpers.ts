@@ -1,4 +1,5 @@
-import {KnownUserException, RequestValidationResult} from './Models'
+import {MissingSha256ImplementationException, RequestValidationResult} from './Models';
+import {IConnectorContextProvider, ICryptoProvider} from "./ConnectorContextProvider";
 
 export enum ErrorCode {
     Hash = "hash",
@@ -22,8 +23,12 @@ export class Utils {
         return decodeURIComponent(url);
     }
 
-    static generateSHA256Hash(secretKey: string, stringToHash: string): string {
-        throw new KnownUserException("Missing implementation for generateSHA256Hash");
+    static generateSHA256Hash(secretKey: string, stringToHash: string, context?: IConnectorContextProvider): string {
+        let cryptoProvider: ICryptoProvider;
+        if(context && context.getCryptoProvider && (cryptoProvider = context.getCryptoProvider())){
+            return cryptoProvider.getSha256Hash(secretKey, stringToHash);
+        }
+        throw MissingSha256ImplementationException;
     }
 
     static endsWith(str: string, search: string): boolean {
@@ -39,20 +44,20 @@ export class Utils {
     }
 
     static bin2hex(s: string):string {
-    
+
         var i: number;
         var l: number;
         var o: string = '';
         var n: string;
-    
+
         s += '';
-    
+
         for (i = 0, l = s.length; i < l; i++) {
             n = s.charCodeAt(i)
                 .toString(16)
             o += n.length < 2 ? '0' + n : n
         }
-    
+
         return o;
     }
 }
@@ -185,10 +190,9 @@ export class ConnectorDiagnostics {
             "https://api2.queue-it.net/diagnostics/connector/error/?code=setup", null, null)
     }
 
-    public static verify(customerId: string, secretKey: string, queueitToken: string): ConnectorDiagnostics {
-        var diagnostics = new ConnectorDiagnostics();
-
-        var qParams = QueueParameterHelper.extractQueueParams(queueitToken);
+    public static verify(customerId: string, secretKey: string, queueitToken: string, context: IConnectorContextProvider): ConnectorDiagnostics {
+        const diagnostics = new ConnectorDiagnostics();
+        const qParams = QueueParameterHelper.extractQueueParams(queueitToken);
 
         if (qParams == null)
             return diagnostics;
@@ -204,7 +208,7 @@ export class ConnectorDiagnostics {
             return diagnostics;
         }
 
-        if (Utils.generateSHA256Hash(secretKey, qParams.queueITTokenWithoutHash) != qParams.hashCode) {
+        if (Utils.generateSHA256Hash(secretKey, qParams.queueITTokenWithoutHash, context) != qParams.hashCode) {
             diagnostics.setStateWithTokenError(customerId, ErrorCode.Hash);
             return diagnostics;
         }

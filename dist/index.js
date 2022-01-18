@@ -18,4 +18,5 @@ var QueueITHelpers_1 = require("./QueueITHelpers");
 Object.defineProperty(exports, "Utils", { enumerable: true, get: function () { return QueueITHelpers_1.Utils; } });
 Object.defineProperty(exports, "QueueParameterHelper", { enumerable: true, get: function () { return QueueITHelpers_1.QueueParameterHelper; } });
 Object.defineProperty(exports, "QueueUrlParams", { enumerable: true, get: function () { return QueueITHelpers_1.QueueUrlParams; } });
+__exportStar(require("./ConnectorContextProvider"), exports);
 //# sourceMappingURL=index.js.map

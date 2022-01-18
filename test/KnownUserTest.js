@@ -1,7 +1,7 @@
-﻿var KnownUser = require('./../dist/KnownUser')
-var QueueITHelpers = require('./../dist/QueueITHelpers')
-var UserInQueueService = require('./../dist/UserInQueueService')
-var Models = require('./../dist/Models')
+﻿var KnownUser = require('./../dist/KnownUser');
+var QueueITHelpers = require('./../dist/QueueITHelpers');
+var UserInQueueService = require('./../dist/UserInQueueService');
+var Models = require('./../dist/Models');
 var assert = require('assert');
 const chai = require('chai');
 chai.use(require('chai-string'));
@@ -9,14 +9,6 @@ const expect = require('chai').expect;
 
 var utils = QueueITHelpers.Utils;
 const SDK_VERSION = UserInQueueService.UserInQueueService.SDK_VERSION;
-utils.generateSHA256Hash = function (secretKey, stringToHash) {
-    const crypto = require('crypto');
-    const hash = crypto.createHmac('sha256', secretKey)
-        .update(stringToHash)
-        .digest('hex');
-    return hash;
-};
-
 var userInQueueServiceMock = {};
 userInQueueServiceMock.validateQueueRequestResult = {};
 userInQueueServiceMock.cancelRequestCalls = {};
@@ -128,23 +120,32 @@ let httpResponseMock = {
         httpResponseMockCookies[name] = {value, domain, expire, httpOnly, isSecure};
     }
 };
-let httpContextProvider = {
-    getHttpRequest: function () {
-        return httpRequestMock;
-    },
-    getHttpResponse: function () {
-        return httpResponseMock;
-    }
+
+let cryptoProviderMock = {
+    getSha256Hash: (secretKey, plaintext) => require('crypto').createHmac('sha256', secretKey)
+        .update(plaintext)
+        .digest('hex')
+};
+
+let enqueueTokenProviderMock = {
+    getEnqueueToken: () => undefined
+};
+
+let connectorContextProvider = {
+    getHttpRequest: () => httpRequestMock,
+    getHttpResponse: () => httpResponseMock,
+    getCryptoProvider: () => cryptoProviderMock,
+    getEnqueueTokenProvider: () => enqueueTokenProviderMock
 };
 
 function generateDebugToken(eventId, secretKey, expiredToken = false) {
-    var queueUrlParams = QueueITHelpers.QueueParameterHelper;
-    var timeStamp = utils.getCurrentTime() + 3 * 60;
+    const queueUrlParams = QueueITHelpers.QueueParameterHelper;
+    let timeStamp = utils.getCurrentTime() + 3 * 60;
 
     if (expiredToken)
         timeStamp = timeStamp - 1000;
 
-    var tokenWithoutHash =
+    const tokenWithoutHash =
         queueUrlParams.EventIdKey +
         queueUrlParams.KeyValueSeparatorChar +
         eventId +
@@ -157,15 +158,13 @@ function generateDebugToken(eventId, secretKey, expiredToken = false) {
         queueUrlParams.KeyValueSeparatorChar +
         timeStamp;
 
-    var hashValue = utils.generateSHA256Hash(secretKey, tokenWithoutHash);
+    const hashValue = cryptoProviderMock.getSha256Hash(secretKey, tokenWithoutHash);
 
-    var token = tokenWithoutHash +
+    return tokenWithoutHash +
         queueUrlParams.KeyValueSeparatorGroupChar +
         queueUrlParams.HashKey +
         queueUrlParams.KeyValueSeparatorChar +
         hashValue;
-
-    return token;
 }
 
 var knownUser = KnownUser.KnownUser;
@@ -182,7 +181,7 @@ var KnownUserTest = {
         cancelEventConfig.version = 1;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.cancelRequestByLocalConfig("url", "queueitToken", cancelEventConfig, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.cancelRequestByLocalConfig("url", "queueitToken", cancelEventConfig, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateCancelRequestCall.method === "validateCancelRequest");
         assert.equal(userInQueueServiceMock.validateCancelRequestCall.targetUrl, "url");
@@ -202,7 +201,7 @@ var KnownUserTest = {
         cancelEventConfig.version = 1;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.cancelRequestByLocalConfig("url", "queueitToken", cancelEventConfig, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.cancelRequestByLocalConfig("url", "queueitToken", cancelEventConfig, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateCancelRequestCall.method === "validateCancelRequest");
         assert.equal(userInQueueServiceMock.validateCancelRequestCall.targetUrl, "url");
@@ -226,7 +225,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", cancelEventConfig, "customerId", "secretKey", httpContextProvider);
+            knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", cancelEventConfig, "customerId", "secretKey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "cancelConfig.queueDomain can not be null or empty.";
         }
@@ -250,7 +249,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", cancelEventConfig, "customerId", "secretKey", httpContextProvider);
+            knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", cancelEventConfig, "customerId", "secretKey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "cancelConfig.eventId can not be null or empty.";
         }
@@ -268,7 +267,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", null, "customerId", "secretKey", httpContextProvider);
+            knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", null, "customerId", "secretKey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "cancelConfig can not be null.";
         }
@@ -287,7 +286,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", eventconfig, null, "secretKey", httpContextProvider);
+            knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", eventconfig, null, "secretKey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "customerId can not be null or empty.";
         }
@@ -305,7 +304,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", eventconfig, "customerid", null, httpContextProvider);
+            knownUser.cancelRequestByLocalConfig("targetUrl", "queueitToken", eventconfig, "customerid", null, connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "secretKey can not be null or empty.";
         }
@@ -323,7 +322,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.cancelRequestByLocalConfig(null, "queueitToken", eventconfig, "customerid", "secretkey", httpContextProvider);
+            knownUser.cancelRequestByLocalConfig(null, "queueitToken", eventconfig, "customerid", "secretkey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "targetUrl can not be null or empty.";
         }
@@ -341,7 +340,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.extendQueueCookie(null, 0, null, false, false, null, httpContextProvider);
+            knownUser.extendQueueCookie(null, 0, null, false, false, null, connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "eventId can not be null or empty.";
         }
@@ -359,7 +358,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.extendQueueCookie("eventId", -1, "cookiedomain", false, false, "secretkey", httpContextProvider);
+            knownUser.extendQueueCookie("eventId", -1, "cookiedomain", false, false, "secretkey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "cookieValidityMinute should be integer greater than 0.";
         }
@@ -377,7 +376,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.extendQueueCookie("eventId", 20, "cookiedomain", false, false, null, httpContextProvider);
+            knownUser.extendQueueCookie("eventId", 20, "cookiedomain", false, false, null, connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "secretKey can not be null or empty.";
         }
@@ -418,7 +417,7 @@ var KnownUserTest = {
         eventconfig.version = 12;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateQueueRequestCall.method === "validateQueueRequest");
         assert.equal(userInQueueServiceMock.validateQueueRequestCall.targetUrl, "targeturl");
@@ -443,7 +442,7 @@ var KnownUserTest = {
         eventconfig.version = 12;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateQueueRequestCall.method === "validateQueueRequest");
         assert.equal(userInQueueServiceMock.validateQueueRequestCall.targetUrl, "targeturl");
@@ -464,7 +463,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
-            knownUser.resolveQueueRequestByLocalConfig("targetUrl", "queueitToken", null, null, "secretKey", httpContextProvider);
+            knownUser.resolveQueueRequestByLocalConfig("targetUrl", "queueitToken", null, null, "secretKey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "customerId can not be null or empty.";
         }
@@ -483,7 +482,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
-            knownUser.resolveQueueRequestByLocalConfig("targetUrl", "queueitToken", null, "customerId", null, httpContextProvider);
+            knownUser.resolveQueueRequestByLocalConfig("targetUrl", "queueitToken", null, "customerId", null, connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "secretKey can not be null or empty.";
         }
@@ -502,7 +501,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
-            knownUser.resolveQueueRequestByLocalConfig("targetUrl", "queueitToken", null, "customerId", "secretKey", httpContextProvider);
+            knownUser.resolveQueueRequestByLocalConfig("targetUrl", "queueitToken", null, "customerId", "secretKey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "queueConfig can not be null.";
         }
@@ -531,7 +530,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
-            knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", httpContextProvider);
+            knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "queueConfig.eventId can not be null or empty.";
         }
@@ -561,7 +560,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
-            knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", httpContextProvider);
+            knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "queueConfig.queueDomain can not be null or empty.";
         }
@@ -590,7 +589,7 @@ var KnownUserTest = {
         //Act
         try {
             knownUser.UserInQueueService = userInQueueServiceMock;
-            knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", httpContextProvider);
+            knownUser.resolveQueueRequestByLocalConfig("targeturl", "queueIttoken", eventconfig, "customerid", "secretkey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "queueConfig.cookieValidityMinute should be integer greater than 0.";
         }
@@ -655,7 +654,7 @@ var KnownUserTest = {
             "ConfigDataVersion": "1.0.0.1"
         }`;
 
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateQueueRequestCall.method === "validateQueueRequest");
         assert(userInQueueServiceMock.validateQueueRequestCall.targetUrl === "http://test.com?event1=true");
@@ -731,7 +730,7 @@ var KnownUserTest = {
             "ConfigDataVersion": "1.0.0.1"
         }`;
 
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateQueueRequestCall.method === "validateQueueRequest");
         assert(userInQueueServiceMock.validateQueueRequestCall.targetUrl === "http://test.com?event1=true");
@@ -765,7 +764,7 @@ var KnownUserTest = {
             "ConfigDataVersion": "1.0.0.1"
         }`;
 
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
 
         assert(Object.keys(userInQueueServiceMock.validateQueueRequestCall).length === 0);
         assert(result.doRedirect() === false);
@@ -826,7 +825,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            result = knownUser.validateRequestByIntegrationConfig(null, "queueIttoken", integrationConfigString, "customerId", "secretKey", httpContextProvider);
+            result = knownUser.validateRequestByIntegrationConfig(null, "queueIttoken", integrationConfigString, "customerId", "secretKey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "currentUrlWithoutQueueITToken can not be null or empty.";
         }
@@ -844,7 +843,7 @@ var KnownUserTest = {
 
         //Act
         try {
-            knownUser.validateRequestByIntegrationConfig("currentUrl", "queueitToken", null, "customerId", "secretKey", httpContextProvider);
+            knownUser.validateRequestByIntegrationConfig("currentUrl", "queueitToken", null, "customerId", "secretKey", connectorContextProvider);
         } catch (err) {
             exceptionWasThrown = err.message === "integrationsConfigString can not be null or empty.";
         }
@@ -899,7 +898,7 @@ var KnownUserTest = {
             }`;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateQueueRequestCall.method === "validateQueueRequest");
         assert(userInQueueServiceMock.validateQueueRequestCall.targetUrl === "http://test.com");
@@ -956,7 +955,7 @@ var KnownUserTest = {
             }`;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateQueueRequestCall.method === "validateQueueRequest");
         assert(userInQueueServiceMock.validateQueueRequestCall.targetUrl === "http://test.com");
@@ -1007,7 +1006,7 @@ var KnownUserTest = {
             }`;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateQueueRequestCall.method === "validateQueueRequest");
         assert(userInQueueServiceMock.validateQueueRequestCall.targetUrl === "");
@@ -1063,7 +1062,7 @@ var KnownUserTest = {
             }`;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateQueueRequestCall.method === "validateQueueRequest");
         assert(userInQueueServiceMock.validateQueueRequestCall.targetUrl === "");
@@ -1124,7 +1123,7 @@ var KnownUserTest = {
         }`;
 
         try {
-            var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+            var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
         } catch {
 
         }
@@ -1178,7 +1177,7 @@ var KnownUserTest = {
         }`;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateCancelRequestCall.method === "validateCancelRequest");
         assert(userInQueueServiceMock.validateCancelRequestCall.targetUrl === "http://test.com?event1=true");
@@ -1241,7 +1240,7 @@ var KnownUserTest = {
         }`;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
 
         assert(userInQueueServiceMock.validateCancelRequestCall.method === "validateCancelRequest");
         assert(userInQueueServiceMock.validateCancelRequestCall.targetUrl === "http://url");
@@ -1304,7 +1303,7 @@ var KnownUserTest = {
 
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
 
         assert(result.actionType === "Ignore");
         assert(result.method === "getIgnoreResult");
@@ -1358,7 +1357,7 @@ var KnownUserTest = {
 			}`;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", "queueIttoken", integrationConfigString, "customerid", "secretkey", connectorContextProvider);
 
         assert(result.actionType === "Ignore");
         assert(result.method === "getIgnoreResult");
@@ -1444,7 +1443,7 @@ var KnownUserTest = {
         var queueitToken = generateDebugToken("eventId", secretKey);
         var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
-        knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, "customerId", secretKey, httpContextProvider);
+        knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, "customerId", secretKey, connectorContextProvider);
 
         var actualCookieValue = httpResponseMockCookies[knownUser.QueueITDebugKey]["value"];
         assert(actualCookieValue.indexOf("ServerUtcTime=" + expectedServerTime + "|") !== -1);
@@ -1534,7 +1533,7 @@ var KnownUserTest = {
         var queueitToken = generateDebugToken("eventId", secretKey);
         var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
 
-        knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, "customerId", secretKey, httpContextProvider);
+        knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, "customerId", secretKey, connectorContextProvider);
 
         var actualCookieValue = httpResponseMockCookies[knownUser.QueueITDebugKey]["value"];
 
@@ -1606,7 +1605,7 @@ var KnownUserTest = {
         var queueitToken = generateDebugToken("eventId", secretKey);
         var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
 
-        knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true=", queueitToken, integrationConfigString, "customerId", secretKey, httpContextProvider);
+        knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true=", queueitToken, integrationConfigString, "customerId", secretKey, connectorContextProvider);
 
         var actualCookieValue = httpResponseMockCookies[knownUser.QueueITDebugKey]["value"];
 
@@ -1644,7 +1643,7 @@ var KnownUserTest = {
         knownUser.UserInQueueService = userInQueueServiceMock;
 
         try {
-            knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, "{}", "customerId", secretKey, httpContextProvider);
+            knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, "{}", "customerId", secretKey, connectorContextProvider);
         } catch (err) {
             assert(err.message === "integrationsConfigString can not be null or empty.");
         }
@@ -1684,7 +1683,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, null, secretKey, httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, null, secretKey, connectorContextProvider);
         //Assert
         assert("https://api2.queue-it.net/diagnostics/connector/error/?code=setup" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -1714,7 +1713,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, "customerId", null, httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, "customerId", null, connectorContextProvider);
         //Assert
         assert("https://api2.queue-it.net/diagnostics/connector/error/?code=setup" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -1744,7 +1743,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, "customerId", secretKey, httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, "customerId", secretKey, connectorContextProvider);
         //Assert
         assert("https://customerId.api2.queue-it.net/customerId/diagnostics/connector/error/?code=timestamp" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -1774,7 +1773,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, "customerId", secretKey, httpContextProvider);
+        var result = knownUser.validateRequestByIntegrationConfig("http://test.com?event1=true", queueitToken, integrationConfigString, "customerId", secretKey, connectorContextProvider);
         //Assert
         assert("https://customerId.api2.queue-it.net/customerId/diagnostics/connector/error/?code=hash" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -1826,7 +1825,7 @@ var KnownUserTest = {
 
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, eventconfig, "customerId", secretKey, httpContextProvider);
+        var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, eventconfig, "customerId", secretKey, connectorContextProvider);
 
         var actualCookieValue = httpResponseMockCookies[knownUser.QueueITDebugKey]["value"];
 
@@ -1878,7 +1877,7 @@ var KnownUserTest = {
         knownUser.UserInQueueService = userInQueueServiceMock;
 
         try {
-            knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, null, "customerId", secretKey, httpContextProvider);
+            knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, null, "customerId", secretKey, connectorContextProvider);
         } catch (err) {
             assert(err.message === "queueConfig can not be null.");
         }
@@ -1918,7 +1917,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, eventconfig, null, secretKey, httpContextProvider);
+        var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, eventconfig, null, secretKey, connectorContextProvider);
         //Assert
         assert("https://api2.queue-it.net/diagnostics/connector/error/?code=setup" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -1948,7 +1947,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, eventconfig, "customerId", null, httpContextProvider);
+        var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, eventconfig, "customerId", null, connectorContextProvider);
         //Assert
         assert("https://api2.queue-it.net/diagnostics/connector/error/?code=setup" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -1978,7 +1977,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, eventconfig, "customerId", secretKey, httpContextProvider);
+        var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, eventconfig, "customerId", secretKey, connectorContextProvider);
         //Assert
         assert("https://customerId.api2.queue-it.net/customerId/diagnostics/connector/error/?code=timestamp" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -2008,7 +2007,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, eventconfig, "customerId", secretKey, httpContextProvider);
+        var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", queueitToken, eventconfig, "customerId", secretKey, connectorContextProvider);
         //Assert
         assert("https://customerId.api2.queue-it.net/customerId/diagnostics/connector/error/?code=hash" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -2060,7 +2059,7 @@ var KnownUserTest = {
 
         //Assert
         try {
-            var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", "queueitToken", eventconfig, "customerId", secretKey, httpContextProvider);
+            var result = knownUser.resolveQueueRequestByLocalConfig("http://test.com?event1=true", "queueitToken", eventconfig, "customerId", secretKey, connectorContextProvider);
         } catch {
 
         }
@@ -2105,7 +2104,7 @@ var KnownUserTest = {
         cancelEventconfig.version = 1;
 
         knownUser.UserInQueueService = userInQueueServiceMock;
-        var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, cancelEventconfig, "customerid", "secretKey", httpContextProvider);
+        var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, cancelEventconfig, "customerid", "secretKey", connectorContextProvider);
 
         var actualCookieValue = httpResponseMockCookies[knownUser.QueueITDebugKey]["value"];
 
@@ -2155,7 +2154,7 @@ var KnownUserTest = {
         knownUser.UserInQueueService = userInQueueServiceMock;
 
         try {
-            knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, null, "customerId", secretKey, httpContextProvider);
+            knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, null, "customerId", secretKey, connectorContextProvider);
         } catch (err) {
             assert(err.message === "cancelConfig can not be null.");
         }
@@ -2195,7 +2194,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, cancelConfig, null, secretKey, httpContextProvider);
+        var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, cancelConfig, null, secretKey, connectorContextProvider);
         //Assert
         assert("https://api2.queue-it.net/diagnostics/connector/error/?code=setup" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -2225,7 +2224,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, cancelConfig, "customerId", null, httpContextProvider);
+        var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, cancelConfig, "customerId", null, connectorContextProvider);
         //Assert
         assert("https://api2.queue-it.net/diagnostics/connector/error/?code=setup" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -2255,7 +2254,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, cancelConfig, "customerId", secretKey, httpContextProvider);
+        var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, cancelConfig, "customerId", secretKey, connectorContextProvider);
         //Assert
         assert("https://customerId.api2.queue-it.net/customerId/diagnostics/connector/error/?code=timestamp" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -2285,7 +2284,7 @@ var KnownUserTest = {
         // var expectedServerTime = (new Date()).toISOString().split('.')[0] + "Z";
         knownUser.UserInQueueService = userInQueueServiceMock;
 
-        var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, cancelConfig, "customerId", secretKey, httpContextProvider);
+        var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true", queueitToken, cancelConfig, "customerId", secretKey, connectorContextProvider);
         //Assert
         assert("https://customerId.api2.queue-it.net/customerId/diagnostics/connector/error/?code=hash" === result.redirectUrl);
         assert(typeof httpResponseMockCookies[knownUser.QueueITDebugKey] === 'undefined');
@@ -2329,7 +2328,7 @@ var KnownUserTest = {
         knownUser.UserInQueueService = userInQueueServiceMock;
         try {
             var result = knownUser.cancelRequestByLocalConfig("http://test.com?event1=true",
-                "queueitToken", cancelEventconfig, "customerid", "secretKey", httpContextProvider);
+                "queueitToken", cancelEventconfig, "customerid", "secretKey", connectorContextProvider);
         } catch {
 
         }

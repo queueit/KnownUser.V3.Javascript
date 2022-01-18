@@ -75,6 +75,8 @@ export class KnownUserException {
     }
 }
 
+export const MissingSha256ImplementationException = new KnownUserException("Missing implementation for generateSHA256Hash");
+
 export class ActionTypes {
     public static readonly QueueAction = "Queue";
     public static readonly CancelAction = "Cancel";

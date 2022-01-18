@@ -4,8 +4,8 @@ exports.UserInQueueService = void 0;
 var QueueITHelpers_1 = require("./QueueITHelpers");
 var Models_1 = require("./Models");
 var UserInQueueService = /** @class */ (function () {
-    function UserInQueueService(httpContextProvider, userInQueueStateRepository) {
-        this.httpContextProvider = httpContextProvider;
+    function UserInQueueService(contextProvider, userInQueueStateRepository) {
+        this.contextProvider = contextProvider;
         this.userInQueueStateRepository = userInQueueStateRepository;
     }
     UserInQueueService.prototype.getValidTokenResult = function (config, queueParams, secretKey) {
@@ -22,25 +22,34 @@ var UserInQueueService = /** @class */ (function () {
         var redirectUrl = this.generateRedirectUrl(config.queueDomain, uriPath, query);
         return new Models_1.RequestValidationResult(Models_1.ActionTypes.QueueAction, config.eventId, null, redirectUrl, null, config.actionName);
     };
-    UserInQueueService.prototype.getQueueResult = function (targetUrl, config, customerId, state) {
-        var query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName) +
+    UserInQueueService.prototype.getQueueResult = function (targetUrl, config, customerId) {
+        var _a;
+        var enqueueTokenProvider = this.contextProvider.getEnqueueTokenProvider;
+        var enqueueToken = enqueueTokenProvider && ((_a = enqueueTokenProvider()) === null || _a === void 0 ? void 0 : _a.getEnqueueToken(config.eventId));
+        var query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName, null, enqueueToken) +
             (targetUrl ? "&t=" + QueueITHelpers_1.Utils.encodeUrl(targetUrl) : "");
         var redirectUrl = this.generateRedirectUrl(config.queueDomain, "", query);
         return new Models_1.RequestValidationResult(Models_1.ActionTypes.QueueAction, config.eventId, null, redirectUrl, null, config.actionName);
     };
-    UserInQueueService.prototype.getQueryString = function (customerId, eventId, configVersion, culture, layoutName, actionName, invalidCookieReason) {
+    UserInQueueService.prototype.getQueryString = function (customerId, eventId, configVersion, culture, layoutName, actionName, invalidCookieReason, enqueueToken) {
         var queryStringList = new Array();
         queryStringList.push("c=".concat(QueueITHelpers_1.Utils.encodeUrl(customerId)));
         queryStringList.push("e=".concat(QueueITHelpers_1.Utils.encodeUrl(eventId)));
         queryStringList.push("ver=".concat(UserInQueueService.SDK_VERSION));
         queryStringList.push("cver=".concat(configVersion));
         queryStringList.push("man=".concat(QueueITHelpers_1.Utils.encodeUrl(actionName)));
-        if (culture)
+        if (culture) {
             queryStringList.push("cid=" + QueueITHelpers_1.Utils.encodeUrl(culture));
-        if (layoutName)
+        }
+        if (layoutName) {
             queryStringList.push("l=" + QueueITHelpers_1.Utils.encodeUrl(layoutName));
-        if (invalidCookieReason)
+        }
+        if (invalidCookieReason) {
             queryStringList.push("icr=" + QueueITHelpers_1.Utils.encodeUrl(invalidCookieReason));
+        }
+        if (enqueueToken) {
+            queryStringList.push("enqueuetoken=".concat(enqueueToken));
+        }
         return queryStringList.join("&");
     };
     UserInQueueService.prototype.generateRedirectUrl = function (queueDomain, uriPath, query) {
@@ -73,7 +82,7 @@ var UserInQueueService = /** @class */ (function () {
             requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueTokenParams, QueueITHelpers_1.ErrorCode.CookieSessionState, state);
         }
         else {
-            requestValidationResult = this.getQueueResult(targetUrl, config, customerId, state);
+            requestValidationResult = this.getQueueResult(targetUrl, config, customerId);
         }
         if (state.isFound && !isTokenValid) {
             this.userInQueueStateRepository.cancelQueueCookie(config.eventId, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure);
@@ -105,23 +114,23 @@ var UserInQueueService = /** @class */ (function () {
         return new Models_1.RequestValidationResult(Models_1.ActionTypes.IgnoreAction, null, null, null, null, actionName);
     };
     UserInQueueService.prototype.validateToken = function (config, queueParams, secretKey) {
-        var calculatedHash = QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, queueParams.queueITTokenWithoutHash);
+        var calculatedHash = QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, queueParams.queueITTokenWithoutHash, this.contextProvider);
         if (calculatedHash !== queueParams.hashCode)
             return new TokenValidationResult(false, "hash");
         if (queueParams.eventId !== config.eventId)
             return new TokenValidationResult(false, "eventid");
         if (queueParams.timeStamp < QueueITHelpers_1.Utils.getCurrentTime())
             return new TokenValidationResult(false, "timestamp");
-        var clientIp = this.httpContextProvider.getHttpRequest().getUserHostAddress();
+        var clientIp = this.contextProvider.getHttpRequest().getUserHostAddress();
         if (queueParams.hashedIp && clientIp) {
-            var hashedIp = QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, clientIp);
+            var hashedIp = QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, clientIp, this.contextProvider);
             if (hashedIp !== queueParams.hashedIp) {
                 return new TokenValidationResult(false, "ip");
             }
         }
         return new TokenValidationResult(true, null);
     };
-    UserInQueueService.SDK_VERSION = "v3-javascript-" + "3.7.5";
+    UserInQueueService.SDK_VERSION = "v3-javascript-" + "3.7.6";
     return UserInQueueService;
 }());
 exports.UserInQueueService = UserInQueueService;

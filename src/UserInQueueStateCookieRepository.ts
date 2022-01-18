@@ -1,5 +1,5 @@
-import {IHttpContextProvider} from './HttpContextProvider'
-import {CookieHelper, Utils} from './QueueITHelpers'
+import {IConnectorContextProvider} from './ConnectorContextProvider';
+import {CookieHelper, Utils} from './QueueITHelpers';
 
 export enum CookieValidationResult {
     NotFound,
@@ -63,7 +63,7 @@ export class QueueItAcceptedCookie {
 export class UserInQueueStateCookieRepository {
     private static readonly _QueueITDataKey = "QueueITAccepted-SDFrts345E-V3";
 
-    constructor(private httpContextProvider: IHttpContextProvider) {
+    constructor(private contextProvider: IConnectorContextProvider) {
     }
 
     public static getCookieKey(eventId: string) {
@@ -121,7 +121,7 @@ export class UserInQueueStateCookieRepository {
         cookieValues.push({key: QueueItAcceptedCookie.RedirectTypeKey, value: redirectType.toLowerCase()});
         cookieValues.push({key: QueueItAcceptedCookie.IssueTimeKey, value: issueTime});
 
-        if(hashedIp) {
+        if (hashedIp) {
             cookieValues.push({key: QueueItAcceptedCookie.HashedIpKey, value: hashedIp});
         }
 
@@ -140,7 +140,7 @@ export class UserInQueueStateCookieRepository {
         tomorrow.setDate(tomorrow.getDate() + 1);
         const expire = Math.floor(tomorrow.getTime() / 1000);
 
-        this.httpContextProvider.getHttpResponse().setCookie(
+        this.contextProvider.getHttpResponse().setCookie(
             cookieKey,
             CookieHelper.toValueFromKeyValueCollection(cookieValues),
             cookieDomain,
@@ -151,17 +151,17 @@ export class UserInQueueStateCookieRepository {
 
     public getState(eventId: string, cookieValidityMinutes: number, secretKey: string, validateTime: boolean): StateInfo {
         let qitAcceptedCookie: QueueItAcceptedCookie = null;
-        const clientIp = this.httpContextProvider.getHttpRequest().getUserHostAddress();
+        const clientIp = this.contextProvider.getHttpRequest().getUserHostAddress();
         try {
             const cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
-            const cookie = this.httpContextProvider.getHttpRequest().getCookieValue(cookieKey);
-            
+            const cookie = this.contextProvider.getHttpRequest().getCookieValue(cookieKey);
+
             if (!cookie)
                 return new StateInfo("", null, "", null, CookieValidationResult.NotFound, null, clientIp);
-                
+
             qitAcceptedCookie = QueueItAcceptedCookie.fromCookieHeader(cookie);
             const cookieValidationResult = this.isCookieValid(secretKey, qitAcceptedCookie, eventId, cookieValidityMinutes, validateTime);
-            if (cookieValidationResult != CookieValidationResult.Valid){
+            if (cookieValidationResult != CookieValidationResult.Valid) {
                 return new StateInfo("", null, "", qitAcceptedCookie.hashedIp, cookieValidationResult, qitAcceptedCookie, clientIp);
             }
 
@@ -173,7 +173,7 @@ export class UserInQueueStateCookieRepository {
                 qitAcceptedCookie.redirectType,
                 qitAcceptedCookie.hashedIp,
                 CookieValidationResult.Valid,
-                qitAcceptedCookie, 
+                qitAcceptedCookie,
                 clientIp);
         } catch (ex) {
             return new StateInfo("", null, "", qitAcceptedCookie?.hashedIp, CookieValidationResult.Error, qitAcceptedCookie, clientIp);
@@ -210,11 +210,11 @@ export class UserInQueueStateCookieRepository {
                     return CookieValidationResult.Expired;
             }
 
-            const userHostAddress = this.httpContextProvider.getHttpRequest().getUserHostAddress();
-            if(cookie.hashedIp && userHostAddress) {
-                const hashedUserHostAddress = Utils.generateSHA256Hash(secretKey, userHostAddress);
+            const userHostAddress = this.contextProvider.getHttpRequest().getUserHostAddress();
+            if (cookie.hashedIp && userHostAddress) {
+                const hashedUserHostAddress = Utils.generateSHA256Hash(secretKey, userHostAddress, this.contextProvider);
 
-                if(cookie.hashedIp !== hashedUserHostAddress) {
+                if (cookie.hashedIp !== hashedUserHostAddress) {
                     return CookieValidationResult.IpBindingMismatch;
                 }
             }
@@ -230,7 +230,7 @@ export class UserInQueueStateCookieRepository {
                              isCookieHttpOnly: boolean,
                              isCookieSecure: boolean) {
         const cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
-        this.httpContextProvider.getHttpResponse()
+        this.contextProvider.getHttpResponse()
             .setCookie(cookieKey, "", cookieDomain, 0, isCookieHttpOnly, isCookieSecure);
     }
 
@@ -241,7 +241,7 @@ export class UserInQueueStateCookieRepository {
                               isCookieSecure: boolean,
                               secretKey: string) {
         const cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
-        const cookie = this.httpContextProvider.getHttpRequest().getCookieValue(cookieKey);
+        const cookie = this.contextProvider.getHttpRequest().getCookieValue(cookieKey);
 
         if (!cookie)
             return;
@@ -275,15 +275,14 @@ export class UserInQueueStateCookieRepository {
         issueTime: string,
         hashedIp: string,
         secretKey: string) {
-
         let valueToHash = eventId
-                        + queueId
-                        + (fixedCookieValidityMinutes ? fixedCookieValidityMinutes : "")
-                        + redirectType
-                        + issueTime
-                        + (hashedIp ? hashedIp : "");
+            + queueId
+            + (fixedCookieValidityMinutes ? fixedCookieValidityMinutes : "")
+            + redirectType
+            + issueTime
+            + (hashedIp ? hashedIp : "");
 
-        return Utils.generateSHA256Hash(secretKey, valueToHash);
+        return Utils.generateSHA256Hash(secretKey, valueToHash, this.contextProvider);
     }
 }
 

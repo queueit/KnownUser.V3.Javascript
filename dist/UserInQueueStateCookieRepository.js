@@ -50,8 +50,8 @@ var QueueItAcceptedCookie = /** @class */ (function () {
 }());
 exports.QueueItAcceptedCookie = QueueItAcceptedCookie;
 var UserInQueueStateCookieRepository = /** @class */ (function () {
-    function UserInQueueStateCookieRepository(httpContextProvider) {
-        this.httpContextProvider = httpContextProvider;
+    function UserInQueueStateCookieRepository(contextProvider) {
+        this.contextProvider = contextProvider;
     }
     UserInQueueStateCookieRepository.getCookieKey = function (eventId) {
         return "".concat(UserInQueueStateCookieRepository._QueueITDataKey, "_").concat(eventId);
@@ -85,14 +85,14 @@ var UserInQueueStateCookieRepository = /** @class */ (function () {
         var tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         var expire = Math.floor(tomorrow.getTime() / 1000);
-        this.httpContextProvider.getHttpResponse().setCookie(cookieKey, QueueITHelpers_1.CookieHelper.toValueFromKeyValueCollection(cookieValues), cookieDomain, expire, isCookieHttpOnly, isCookieSecure);
+        this.contextProvider.getHttpResponse().setCookie(cookieKey, QueueITHelpers_1.CookieHelper.toValueFromKeyValueCollection(cookieValues), cookieDomain, expire, isCookieHttpOnly, isCookieSecure);
     };
     UserInQueueStateCookieRepository.prototype.getState = function (eventId, cookieValidityMinutes, secretKey, validateTime) {
         var qitAcceptedCookie = null;
-        var clientIp = this.httpContextProvider.getHttpRequest().getUserHostAddress();
+        var clientIp = this.contextProvider.getHttpRequest().getUserHostAddress();
         try {
             var cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
-            var cookie = this.httpContextProvider.getHttpRequest().getCookieValue(cookieKey);
+            var cookie = this.contextProvider.getHttpRequest().getCookieValue(cookieKey);
             if (!cookie)
                 return new StateInfo("", null, "", null, CookieValidationResult.NotFound, null, clientIp);
             qitAcceptedCookie = QueueItAcceptedCookie.fromCookieHeader(cookie);
@@ -121,9 +121,9 @@ var UserInQueueStateCookieRepository = /** @class */ (function () {
                 if (expirationTime < QueueITHelpers_1.Utils.getCurrentTime())
                     return CookieValidationResult.Expired;
             }
-            var userHostAddress = this.httpContextProvider.getHttpRequest().getUserHostAddress();
+            var userHostAddress = this.contextProvider.getHttpRequest().getUserHostAddress();
             if (cookie.hashedIp && userHostAddress) {
-                var hashedUserHostAddress = QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, userHostAddress);
+                var hashedUserHostAddress = QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, userHostAddress, this.contextProvider);
                 if (cookie.hashedIp !== hashedUserHostAddress) {
                     return CookieValidationResult.IpBindingMismatch;
                 }
@@ -136,12 +136,12 @@ var UserInQueueStateCookieRepository = /** @class */ (function () {
     };
     UserInQueueStateCookieRepository.prototype.cancelQueueCookie = function (eventId, cookieDomain, isCookieHttpOnly, isCookieSecure) {
         var cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
-        this.httpContextProvider.getHttpResponse()
+        this.contextProvider.getHttpResponse()
             .setCookie(cookieKey, "", cookieDomain, 0, isCookieHttpOnly, isCookieSecure);
     };
     UserInQueueStateCookieRepository.prototype.reissueQueueCookie = function (eventId, cookieValidityMinutes, cookieDomain, isCookieHttpOnly, isCookieSecure, secretKey) {
         var cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
-        var cookie = this.httpContextProvider.getHttpRequest().getCookieValue(cookieKey);
+        var cookie = this.contextProvider.getHttpRequest().getCookieValue(cookieKey);
         if (!cookie)
             return;
         var qitAcceptedCookie = QueueItAcceptedCookie.fromCookieHeader(cookie);
@@ -159,7 +159,7 @@ var UserInQueueStateCookieRepository = /** @class */ (function () {
             + redirectType
             + issueTime
             + (hashedIp ? hashedIp : "");
-        return QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, valueToHash);
+        return QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, valueToHash, this.contextProvider);
     };
     UserInQueueStateCookieRepository._QueueITDataKey = "QueueITAccepted-SDFrts345E-V3";
     return UserInQueueStateCookieRepository;

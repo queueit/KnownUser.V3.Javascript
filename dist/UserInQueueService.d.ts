@@ -1,11 +1,11 @@
 import { RequestValidationResult, QueueEventConfig, CancelEventConfig } from './Models';
 import { UserInQueueStateCookieRepository } from './UserInQueueStateCookieRepository';
-import { IHttpContextProvider } from './HttpContextProvider';
+import { IConnectorContextProvider } from './ConnectorContextProvider';
 export declare class UserInQueueService {
-    private httpContextProvider;
+    private contextProvider;
     private userInQueueStateRepository;
     static readonly SDK_VERSION: string;
-    constructor(httpContextProvider: IHttpContextProvider, userInQueueStateRepository: UserInQueueStateCookieRepository);
+    constructor(contextProvider: IConnectorContextProvider, userInQueueStateRepository: UserInQueueStateCookieRepository);
     private getValidTokenResult;
     private getErrorResult;
     private getQueueResult;

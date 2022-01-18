@@ -1,5 +1,5 @@
 import * as IntegrationModels from './IntegrationConfigModel';
-import { IHttpRequest } from '../HttpContextProvider';
+import { IHttpRequest } from '../ConnectorContextProvider';
 export interface IIntegrationEvaluator {
     getMatchedIntegrationConfig(customerIntegration: IntegrationModels.CustomerIntegration, currentPageUrl: string, request: IHttpRequest): IntegrationModels.IntegrationConfigModel;
 }

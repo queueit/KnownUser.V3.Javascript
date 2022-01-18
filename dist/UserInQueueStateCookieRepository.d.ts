@@ -1,4 +1,4 @@
-import { IHttpContextProvider } from './HttpContextProvider';
+import { IConnectorContextProvider } from './ConnectorContextProvider';
 export declare enum CookieValidationResult {
     NotFound = 0,
     Expired = 1,
@@ -31,9 +31,9 @@ export declare class QueueItAcceptedCookie {
     static fromCookieHeader(cookieHeaderValue: any): QueueItAcceptedCookie;
 }
 export declare class UserInQueueStateCookieRepository {
-    private httpContextProvider;
+    private contextProvider;
     private static readonly _QueueITDataKey;
-    constructor(httpContextProvider: IHttpContextProvider);
+    constructor(contextProvider: IConnectorContextProvider);
     static getCookieKey(eventId: string): string;
     store(eventId: string, queueId: string, fixedCookieValidityMinutes: number | null, cookieDomain: string, isCookieHttpOnly: boolean, isCookieSecure: boolean, redirectType: string, hashedIp: string | null, secretKey: string): void;
     private createCookie;

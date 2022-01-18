@@ -41,6 +41,7 @@ export declare class KnownUserException {
     message: any;
     constructor(message: any);
 }
+export declare const MissingSha256ImplementationException: KnownUserException;
 export declare class ActionTypes {
     static readonly QueueAction = "Queue";
     static readonly CancelAction = "Cancel";

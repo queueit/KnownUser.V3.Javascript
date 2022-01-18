@@ -25,7 +25,7 @@ function generateHash(eventId, queueId, fixedCookieValidityMinutes, redirectType
 }
 
 let mockCookies = {};
-let httpRequest = {
+let httpRequestMock = {
     getCookieValue: function (name) {
         if (mockCookies[name]) {
             return mockCookies[name].value;
@@ -34,7 +34,7 @@ let httpRequest = {
     },
     getUserHostAddress: () => null
 };
-let httpResponse = {
+let httpResponseMock = {
     setCookie: function (name, value, domain, expire, isHttpOnly, isSecure) {
         mockCookies[name] = {
             name,
@@ -46,12 +46,24 @@ let httpResponse = {
         };
     }
 };
-let httpContextProvider = {
-    getHttpRequest: () => httpRequest,
-    getHttpResponse: () => httpResponse
-}
+let cryptoProviderMock = {
+    getSha256Hash: (secretKey, plaintext) => require('crypto').createHmac('sha256', secretKey)
+        .update(plaintext)
+        .digest('hex')
+};
 
-let userInQueueStateCookieRepository = new UserInQueueStateCookieRepository(httpContextProvider);
+let enqueueTokenProviderMock = {
+    getEnqueueToken: () => undefined
+};
+
+const connectorContextProvider = {
+    getHttpRequest: () => httpRequestMock,
+    getHttpResponse: () => httpResponseMock,
+    getCryptoProvider: () => cryptoProviderMock,
+    getEnqueueTokenProvider: () => enqueueTokenProviderMock
+};
+
+let userInQueueStateCookieRepository = new UserInQueueStateCookieRepository(connectorContextProvider);
 
 let UserInQueueStateCookieRepositoryTest = {
     test_store_givenHashedIp_Then_ValidCookieIsSavedWithHashedIpSet: function () {
@@ -66,7 +78,7 @@ let UserInQueueStateCookieRepositoryTest = {
         const cookieIsSecure = true;
         const hashedIp = utils.generateSHA256Hash(secretKey, "127.0.0.1");
 
-        httpRequest.getUserHostAddress = () => "127.0.0.1";
+        httpRequestMock.getUserHostAddress = () => "127.0.0.1";
 
         userInQueueStateCookieRepository.store(
             eventId,
@@ -101,7 +113,7 @@ let UserInQueueStateCookieRepositoryTest = {
         const cookieIsSecure = true;
         const hashedIp = utils.generateSHA256Hash(secretKey, "127.0.0.1");
 
-        httpRequest.getUserHostAddress = function () {
+        httpRequestMock.getUserHostAddress = function () {
             return "1.1.1.1";
         }
 
@@ -135,7 +147,7 @@ let UserInQueueStateCookieRepositoryTest = {
         const cookieIsSecure = true;
         const hashedIp = undefined;
 
-        httpRequest.getUserHostAddress = () => "1.1.1.1";
+        httpRequestMock.getUserHostAddress = () => "1.1.1.1";
 
         userInQueueStateCookieRepository.store(
             eventId,
@@ -482,7 +494,7 @@ let UserInQueueStateCookieRepositoryTest = {
         let hash = generateHash(eventId, queueId, null, "queue", issueTime, hashedIp, secretKey);
 
         let cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
-        httpResponse.setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&RedirectType=queue&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + 24 * 60 * 60, cookieDomain);
+        httpResponseMock.setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&RedirectType=queue&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + 24 * 60 * 60, cookieDomain);
         let state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
 
         assert(state.isStateExtendable());
@@ -501,7 +513,7 @@ let UserInQueueStateCookieRepositoryTest = {
         let hashedIp = null;
         let hash = generateHash(eventId, queueId, null, "queue", issueTime, hashedIp, secretKey);
 
-        httpResponse.setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&RedirectType=queue&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + 24 * 60 * 60, cookieDomain);
+        httpResponseMock.setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&RedirectType=queue&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + 24 * 60 * 60, cookieDomain);
         let state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
 
         assert(state.isValid === false);
@@ -517,7 +529,7 @@ let UserInQueueStateCookieRepositoryTest = {
         let hash = generateHash(eventId, queueId, 3, "idle", issueTime, hashedIp, secretKey);
 
         let cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
-        httpResponse.setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&FixedValidityMins=3&RedirectType=idle&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + (24 * 60 * 60), cookieDomain);
+        httpResponseMock.setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&FixedValidityMins=3&RedirectType=idle&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + (24 * 60 * 60), cookieDomain);
         let state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
 
         assert(state.isValid === false);
@@ -533,7 +545,7 @@ let UserInQueueStateCookieRepositoryTest = {
         let hash = generateHash(eventId, queueId, 3, "idle", issueTime, hashedIp, secretKey);
 
         let cookieKey = UserInQueueStateCookieRepository.getCookieKey(eventId);
-        httpResponse.setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&FixedValidityMins=3&RedirectType=idle&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + (24 * 60 * 60), cookieDomain);
+        httpResponseMock.setCookie(cookieKey, "EventId=" + eventId + "&QueueId=" + queueId + "&FixedValidityMins=3&RedirectType=idle&IssueTime=" + issueTime + "&Hash=" + hash, QueueITHelpers.Utils.getCurrentTime() + (24 * 60 * 60), cookieDomain);
         let state = userInQueueStateCookieRepository.getState(eventId, 10, secretKey, true);
 
         assert(state.isStateExtendable() === false);

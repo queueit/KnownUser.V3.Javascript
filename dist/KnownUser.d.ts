@@ -1,5 +1,5 @@
 import { UserInQueueService } from './UserInQueueService';
-import { IHttpContextProvider } from './HttpContextProvider';
+import { IConnectorContextProvider } from './ConnectorContextProvider';
 import { CancelEventConfig, QueueEventConfig, RequestValidationResult } from './Models';
 export declare class KnownUser {
     static readonly QueueITTokenKey = "queueittoken";
@@ -16,8 +16,8 @@ export declare class KnownUser {
     private static handleQueueAction;
     private static handleCancelAction;
     private static handleIgnoreAction;
-    static extendQueueCookie(eventId: string, cookieValidityMinute: number, cookieDomain: string, isCookieHttpOnly: boolean, isCookieSecure: boolean, secretKey: string, httpContextProvider: IHttpContextProvider): void;
-    static resolveQueueRequestByLocalConfig(targetUrl: string, queueitToken: string, queueConfig: QueueEventConfig, customerId: string, secretKey: string, httpContextProvider: IHttpContextProvider): RequestValidationResult;
-    static validateRequestByIntegrationConfig(currentUrlWithoutQueueITToken: string, queueitToken: string, integrationsConfigString: string, customerId: string, secretKey: string, httpContextProvider: IHttpContextProvider): RequestValidationResult;
-    static cancelRequestByLocalConfig(targetUrl: string, queueitToken: string, cancelConfig: CancelEventConfig, customerId: string, secretKey: string, httpContextProvider: IHttpContextProvider): RequestValidationResult;
+    static extendQueueCookie(eventId: string, cookieValidityMinute: number, cookieDomain: string, isCookieHttpOnly: boolean, isCookieSecure: boolean, secretKey: string, contextProvider: IConnectorContextProvider): void;
+    static resolveQueueRequestByLocalConfig(targetUrl: string, queueitToken: string, queueConfig: QueueEventConfig, customerId: string, secretKey: string, contextProvider: IConnectorContextProvider): RequestValidationResult;
+    static validateRequestByIntegrationConfig(currentUrlWithoutQueueITToken: string, queueitToken: string, integrationsConfigString: string, customerId: string, secretKey: string, contextProvider: IConnectorContextProvider): RequestValidationResult;
+    static cancelRequestByLocalConfig(targetUrl: string, queueitToken: string, cancelConfig: CancelEventConfig, customerId: string, secretKey: string, contextProvider: IConnectorContextProvider): RequestValidationResult;
 }
