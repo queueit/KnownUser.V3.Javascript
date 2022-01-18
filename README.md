@@ -23,8 +23,6 @@ var fs = require('fs');
 
 var QueueITConnector = require('queueit-knownuser');
 
-configureKnownUserHashing();
-
 function isIgnored(req){
   return req.method == 'HEAD' || req.method == 'OPTIONS'
 }
