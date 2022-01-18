@@ -143,7 +143,7 @@ function initializeExpressContextProvider(req, res) {
         },
         getEnqueueTokenProvider: function(){
             return {
-                getEnqueueToken: function(){
+                getEnqueueToken: function(waitingRoomId){
                     // If you need to use an enqueue token when enqueuing, you need to return it here.
                     return null;
                 }
