@@ -46,11 +46,11 @@ router.get('/', function (req, res, next) {
     var customerId = ""; // Your Queue-it customer ID
     var secretKey = ""; // Your 72 char secret key as specified in Go Queue-it self-service platform
 
-    var httpContextProvider = initializeExpressHttpContextProvider(req, res);
+    var contextProvider = initializeExpressContextProvider(req, res);
     
     var knownUser = QueueITConnector.KnownUser;
     var queueitToken = req.query[knownUser.QueueITTokenKey];
-    var requestUrl = httpContextProvider.getHttpRequest().getAbsoluteUri();
+    var requestUrl = contextProvider.getHttpRequest().getAbsoluteUri();
     var requestUrlWithoutToken = getRequestUrlWithoutToken(requestUrl);
     // The requestUrlWithoutToken is used to match Triggers and as the Target url (where to return the users to).
     // It is therefor important that this is exactly the url of the users browsers. So, if your webserver is
@@ -58,7 +58,7 @@ router.get('/', function (req, res, next) {
 
     var validationResult = knownUser.validateRequestByIntegrationConfig(
       requestUrlWithoutToken, queueitToken, integrationsConfigString,
-      customerId, secretKey, httpContextProvider);
+      customerId, secretKey, contextProvider);
 
 	if (validationResult.doRedirect()) {
       // Adding no cache headers to prevent browsers to cache requests
@@ -126,11 +126,31 @@ function getRequestUrlWithoutToken(requestUrl){
 module.exports = router;
 ```
 
-Code to initialize a httpContextProvider in Express (requires node module 'cookie-parser'):
+Code to initialize a contextProvider in Express (requires node module 'cookie-parser'):
 
 ```javascript
-function initializeExpressHttpContextProvider(req, res) {
+function initializeExpressContextProvider(req, res) {
     return {
+        getCryptoProvider: function() {
+            // Code to configure hashing in KnownUser SDK (requires node module 'crypto'):
+            return {
+                getSha256Hash: function(secretKey, plaintext) {
+                  const crypto = require('crypto');
+                  const hash = crypto.createHmac('sha256', secretKey)
+                    .update(plaintext)
+                    .digest('hex');
+                  return hash;
+                }
+            };
+        },
+        getEnqueueTokenProvider: function(){
+            return {
+                getEnqueueToken: function(){
+                    // If you need to use an enqueue token when enqueuing, you need to return it here.
+                    return null;
+                }
+            };
+        },
         getHttpRequest: function () {
             var httpRequest = {
                 getUserAgent: function () {
@@ -185,21 +205,6 @@ function initializeExpressHttpContextProvider(req, res) {
 }
 ```
 
-Code to configure hashing in KnownUser SDK (requires node module 'crypto'):
-
-```javascript
-function configureKnownUserHashing() {
-    var utils = QueueITConnector.Utils;
-    utils.generateSHA256Hash = function (secretKey, stringToHash) {
-      const crypto = require('crypto');
-      const hash = crypto.createHmac('sha256', secretKey)
-        .update(stringToHash)
-        .digest('hex');
-      return hash;
-    };
-}
-```
-
 ##  Implementation using inline queue configuration
 Specify the configuration in code without using the Trigger/Action paradigm. In this case it is important *only to queue-up page requests* and not requests for resources or AJAX calls. This can be done by adding custom filtering logic before caling the `knownUser.resolveQueueRequestByLocalConfig()` method. 
 
@@ -215,8 +220,6 @@ var router = express.Router();
 var fs = require('fs');
 
 var QueueITConnector = require('queueit-knownuser');
-
-configureKnownUserHashing();
 
 function isIgnored(req){
   return req.method == 'HEAD' || req.method == 'OPTIONS'
@@ -249,11 +252,11 @@ router.get('/', function (req, res, next) {
     // queueConfig.culture = "da-DK" // Optional - Culture of the queue layout in the format specified here: https://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx. If unspecified then settings from Event will be used.
     // queueConfig.layoutName = "NameOfYourCustomLayout" // Optional - Name of the queue layout. If unspecified then settings from Event will be used.
 
-    var httpContextProvider = initializeExpressHttpContextProvider(req, res);
+    var contextProvider = initializeExpressContextProvider(req, res);
 
     var knownUser = QueueITConnector.KnownUser;
     var queueitToken = req.query[knownUser.QueueITTokenKey];
-    var requestUrl = httpContextProvider.getHttpRequest().getAbsoluteUri();
+    var requestUrl = contextProvider.getHttpRequest().getAbsoluteUri();
     var requestUrlWithoutToken = getRequestUrlWithoutToken(requestUrl);
     // The requestUrlWithoutToken is used to match Triggers and as the Target url (where to return the users to).
     // It is therefor important that this is exactly the url of the users browsers. So, if your webserver is
@@ -261,7 +264,7 @@ router.get('/', function (req, res, next) {
 
     var validationResult = knownUser.resolveQueueRequestByLocalConfig(
 		requestUrlWithoutToken, queueitToken, queueConfig, 
-		customerId, secretKey, httpContextProvider);
+		customerId, secretKey, contextProvider);
 	  
     if (validationResult.doRedirect()) {
       // Adding no cache headers to prevent browsers to cache requests
@@ -348,6 +351,9 @@ app.use(bodyParser.text());
 And then add this to the httpRequest object in your http context provider:
 ```javascript
 getRequestBodyAsString: function () {
+  if(!req.body || !req.body.toString){
+    return "";
+  }
   return JSON.stringify(req.body.toString());
 }
 ```
