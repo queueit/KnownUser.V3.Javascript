@@ -130,7 +130,7 @@ var UserInQueueService = /** @class */ (function () {
         }
         return new TokenValidationResult(true, null);
     };
-    UserInQueueService.SDK_VERSION = "v3-javascript-" + "3.7.6";
+    UserInQueueService.SDK_VERSION = "v3-javascript-" + "3.7.7";
     return UserInQueueService;
 }());
 exports.UserInQueueService = UserInQueueService;

@@ -9,7 +9,7 @@ import {StateInfo, UserInQueueStateCookieRepository} from './UserInQueueStateCoo
 import {IConnectorContextProvider} from './ConnectorContextProvider';
 
 export class UserInQueueService {
-    static readonly SDK_VERSION = "v3-javascript-" + "3.7.6";
+    static readonly SDK_VERSION = "v3-javascript-" + "3.7.7";
 
     constructor(private contextProvider: IConnectorContextProvider, private userInQueueStateRepository: UserInQueueStateCookieRepository) {
     }
