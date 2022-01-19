@@ -9,7 +9,7 @@ import {StateInfo, UserInQueueStateCookieRepository} from './UserInQueueStateCoo
 import {IConnectorContextProvider} from './ConnectorContextProvider';
 
 export class UserInQueueService {
-    static readonly SDK_VERSION = "v3-javascript-" + "3.7.7";
+    static readonly SDK_VERSION = "v3-javascript-" + "3.7.8";
 
     constructor(private contextProvider: IConnectorContextProvider, private userInQueueStateRepository: UserInQueueStateCookieRepository) {
     }
@@ -81,8 +81,8 @@ export class UserInQueueService {
         config: QueueEventConfig,
         customerId: string)
         : RequestValidationResult {
-        const enqueueTokenProvider = this.contextProvider.getEnqueueTokenProvider
-        const enqueueToken = enqueueTokenProvider && enqueueTokenProvider()?.getEnqueueToken(config.eventId);
+        const enqueueToken = this.contextProvider.getEnqueueTokenProvider
+            && this.contextProvider.getEnqueueTokenProvider().getEnqueueToken(config.eventId);
         let query = this.getQueryString(customerId,
             config.eventId,
             config.version,
