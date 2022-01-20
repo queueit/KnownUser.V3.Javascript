@@ -141,14 +141,6 @@ function initializeExpressContextProvider(req, res) {
                 }
             };
         },
-        getEnqueueTokenProvider: function(){
-            return {
-                getEnqueueToken: function(waitingRoomId){
-                    // If you need to use an enqueue token when enqueuing, you need to return it here.
-                    return null;
-                }
-            };
-        },
         getHttpRequest: function () {
             var httpRequest = {
                 getUserAgent: function () {
