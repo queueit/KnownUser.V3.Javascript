@@ -1,12 +1,12 @@
-import {Utils, QueueUrlParams, QueueParameterHelper, ErrorCode} from './QueueITHelpers';
+import { Utils, QueueUrlParams, QueueParameterHelper, ErrorCode } from './QueueITHelpers';
 import {
     ActionTypes,
     RequestValidationResult,
     QueueEventConfig,
     CancelEventConfig
 } from './Models';
-import {StateInfo, UserInQueueStateCookieRepository} from './UserInQueueStateCookieRepository';
-import {IConnectorContextProvider} from './ConnectorContextProvider';
+import { StateInfo, UserInQueueStateCookieRepository } from './UserInQueueStateCookieRepository';
+import { IConnectorContextProvider } from './ConnectorContextProvider';
 
 export class UserInQueueService {
     static readonly SDK_VERSION = "v3-javascript-" + "3.7.8";
@@ -58,7 +58,7 @@ export class UserInQueueService {
             config.layoutName,
             config.actionName,
             state.getInvalidCookieReason()
-            ) +
+        ) +
             queueItTokenParam +
             `&ts=${Utils.getCurrentTime()}` +
             (targetUrl ? `&t=${Utils.encodeUrl(targetUrl)}` : "");
@@ -82,7 +82,7 @@ export class UserInQueueService {
         customerId: string)
         : RequestValidationResult {
         const enqueueToken = this.contextProvider.getEnqueueTokenProvider
-            && this.contextProvider.getEnqueueTokenProvider().getEnqueueToken(config.eventId);
+            && this.contextProvider.getEnqueueTokenProvider()?.getEnqueueToken(config.eventId);
         let query = this.getQueryString(customerId,
             config.eventId,
             config.version,
