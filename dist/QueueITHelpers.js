@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ConnectorDiagnostics = exports.CookieHelper = exports.QueueParameterHelper = exports.QueueUrlParams = exports.Utils = exports.ErrorCode = void 0;
+exports.SessionValidationResult = exports.InvalidSessionStringBuilder = exports.ConnectorDiagnostics = exports.CookieHelper = exports.QueueParameterHelper = exports.QueueUrlParams = exports.Utils = exports.ErrorCode = void 0;
 var Models_1 = require("./Models");
 var ErrorCode;
 (function (ErrorCode) {
@@ -204,4 +204,79 @@ var ConnectorDiagnostics = /** @class */ (function () {
     return ConnectorDiagnostics;
 }());
 exports.ConnectorDiagnostics = ConnectorDiagnostics;
+var InvalidSessionStringBuilder = /** @class */ (function () {
+    function InvalidSessionStringBuilder() {
+        this.details = new Array();
+    }
+    InvalidSessionStringBuilder.prototype.add = function (key, value) {
+        if (value === void 0) { value = null; }
+        if (value) {
+            this.details.push("".concat(key, ":").concat(value));
+        }
+        else {
+            this.details.push(key);
+        }
+    };
+    InvalidSessionStringBuilder.prototype.toString = function () {
+        return this.details.join(",");
+    };
+    return InvalidSessionStringBuilder;
+}());
+exports.InvalidSessionStringBuilder = InvalidSessionStringBuilder;
+var SessionValidationResult = /** @class */ (function () {
+    function SessionValidationResult(isValid, details, errorCode) {
+        if (details === void 0) { details = null; }
+        if (errorCode === void 0) { errorCode = null; }
+        this.isValid = isValid;
+        this.details = details;
+        this.errorCode = errorCode;
+        this.details = details || {};
+    }
+    SessionValidationResult.prototype.getInvalidReason = function () {
+        if (this.isValid) {
+            return "";
+        }
+        var builder = new InvalidSessionStringBuilder();
+        for (var _i = 0, _a = Object.keys(this.details); _i < _a.length; _i++) {
+            var resultKey = _a[_i];
+            builder.add(resultKey, this.details[resultKey]);
+        }
+        return builder.toString();
+    };
+    SessionValidationResult.newSuccessfulResult = function () {
+        return new SessionValidationResult(true);
+    };
+    SessionValidationResult.newFailedResult = function (errorCode) {
+        return new SessionValidationResult(false, null, errorCode);
+    };
+    SessionValidationResult.setIpBindingValidationDetails = function (hashedIp, clientIp, resultToModify) {
+        if (resultToModify === void 0) { resultToModify = null; }
+        resultToModify = resultToModify !== null && resultToModify !== void 0 ? resultToModify : new SessionValidationResult(false);
+        resultToModify.details["ip"] = "";
+        resultToModify.details['cip'] = Utils.bin2hex(clientIp);
+        resultToModify.details['hip'] = hashedIp;
+        return resultToModify;
+    };
+    SessionValidationResult.setHashMismatchDetails = function (storedHash, resultToModify) {
+        if (resultToModify === void 0) { resultToModify = null; }
+        resultToModify = resultToModify !== null && resultToModify !== void 0 ? resultToModify : new SessionValidationResult(false);
+        resultToModify.details['hash'] = '';
+        resultToModify.details['h'] = storedHash;
+        return resultToModify;
+    };
+    SessionValidationResult.setExpiredResultDetails = function (resultToModify) {
+        if (resultToModify === void 0) { resultToModify = null; }
+        resultToModify = resultToModify !== null && resultToModify !== void 0 ? resultToModify : new SessionValidationResult(false);
+        resultToModify.details['expired'] = '';
+        return resultToModify;
+    };
+    SessionValidationResult.setErrorDetails = function (resultToModify) {
+        if (resultToModify === void 0) { resultToModify = null; }
+        resultToModify = resultToModify !== null && resultToModify !== void 0 ? resultToModify : new SessionValidationResult(false);
+        resultToModify.details['error'] = '';
+        return resultToModify;
+    };
+    return SessionValidationResult;
+}());
+exports.SessionValidationResult = SessionValidationResult;
 //# sourceMappingURL=QueueITHelpers.js.map

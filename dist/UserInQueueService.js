@@ -1,8 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserInQueueService = void 0;
+exports.UserInQueueService = exports.InvalidTokenErrorCode = void 0;
 var QueueITHelpers_1 = require("./QueueITHelpers");
 var Models_1 = require("./Models");
+var InvalidTokenErrorCode;
+(function (InvalidTokenErrorCode) {
+    InvalidTokenErrorCode["Hash"] = "hash";
+    InvalidTokenErrorCode["WaitingRoomId"] = "eventid";
+    InvalidTokenErrorCode["Expired"] = "timestamp";
+    InvalidTokenErrorCode["IpBindingMismatch"] = "ip";
+})(InvalidTokenErrorCode = exports.InvalidTokenErrorCode || (exports.InvalidTokenErrorCode = {}));
 var UserInQueueService = /** @class */ (function () {
     function UserInQueueService(contextProvider, userInQueueStateRepository) {
         this.contextProvider = contextProvider;
@@ -12,9 +19,10 @@ var UserInQueueService = /** @class */ (function () {
         this.userInQueueStateRepository.store(config.eventId, queueParams.queueId, queueParams.cookieValidityMinutes, config.cookieDomain, config.isCookieHttpOnly, config.isCookieSecure, queueParams.redirectType, queueParams.hashedIp, secretKey);
         return new Models_1.RequestValidationResult(Models_1.ActionTypes.QueueAction, config.eventId, queueParams.queueId, null, queueParams.redirectType, config.actionName);
     };
-    UserInQueueService.prototype.getErrorResult = function (customerId, targetUrl, config, qParams, errorCode, state) {
+    UserInQueueService.prototype.getErrorResult = function (customerId, targetUrl, config, qParams, validationResult) {
+        var errorCode = validationResult.errorCode;
         var queueItTokenParam = qParams ? "&queueittoken=".concat(qParams.queueITToken) : '';
-        var query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName, state.getInvalidCookieReason()) +
+        var query = this.getQueryString(customerId, config.eventId, config.version, config.culture, config.layoutName, config.actionName, validationResult.getInvalidReason()) +
             queueItTokenParam +
             "&ts=".concat(QueueITHelpers_1.Utils.getCurrentTime()) +
             (targetUrl ? "&t=".concat(QueueITHelpers_1.Utils.encodeUrl(targetUrl)) : "");
@@ -69,17 +77,17 @@ var UserInQueueService = /** @class */ (function () {
         var requestValidationResult;
         var isTokenValid = false;
         if (queueTokenParams) {
-            var tokenValidationResult = this.validateToken(config, queueTokenParams, secretKey);
-            isTokenValid = tokenValidationResult.isValid;
+            var validationOutput = this.validateToken(config, queueTokenParams, secretKey);
+            isTokenValid = validationOutput.result.isValid;
             if (isTokenValid) {
                 requestValidationResult = this.getValidTokenResult(config, queueTokenParams, secretKey);
             }
             else {
-                requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueTokenParams, tokenValidationResult.errorCode, state);
+                requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueTokenParams, validationOutput.result);
             }
         }
         else if (state.isBoundToAnotherIp) {
-            requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueTokenParams, QueueITHelpers_1.ErrorCode.CookieSessionState, state);
+            requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueTokenParams, state.result);
         }
         else {
             requestValidationResult = this.getQueueResult(targetUrl, config, customerId);
@@ -116,29 +124,37 @@ var UserInQueueService = /** @class */ (function () {
     UserInQueueService.prototype.validateToken = function (config, queueParams, secretKey) {
         var calculatedHash = QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, queueParams.queueITTokenWithoutHash, this.contextProvider);
         if (calculatedHash !== queueParams.hashCode)
-            return new TokenValidationResult(false, "hash");
+            return new TokenValidationOutput(QueueITHelpers_1.SessionValidationResult.newFailedResult(InvalidTokenErrorCode.Hash));
         if (queueParams.eventId !== config.eventId)
-            return new TokenValidationResult(false, "eventid");
+            return new TokenValidationOutput(QueueITHelpers_1.SessionValidationResult.newFailedResult(InvalidTokenErrorCode.WaitingRoomId));
         if (queueParams.timeStamp < QueueITHelpers_1.Utils.getCurrentTime())
-            return new TokenValidationResult(false, "timestamp");
+            return new TokenValidationOutput(QueueITHelpers_1.SessionValidationResult.newFailedResult(InvalidTokenErrorCode.Expired));
         var clientIp = this.contextProvider.getHttpRequest().getUserHostAddress();
         if (queueParams.hashedIp && clientIp) {
-            var hashedIp = QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, clientIp, this.contextProvider);
-            if (hashedIp !== queueParams.hashedIp) {
-                return new TokenValidationResult(false, "ip");
+            var expectedIpHash = QueueITHelpers_1.Utils.generateSHA256Hash(secretKey, clientIp, this.contextProvider);
+            if (expectedIpHash !== queueParams.hashedIp) {
+                var newResult = QueueITHelpers_1.SessionValidationResult.newFailedResult(InvalidTokenErrorCode.IpBindingMismatch);
+                QueueITHelpers_1.SessionValidationResult.setIpBindingValidationDetails(queueParams.hashedIp, clientIp, newResult);
+                return new TokenValidationOutput(newResult);
             }
         }
-        return new TokenValidationResult(true, null);
+        return new TokenValidationOutput(QueueITHelpers_1.SessionValidationResult.newSuccessfulResult());
     };
-    UserInQueueService.SDK_VERSION = "v3-javascript-" + "3.7.8";
+    UserInQueueService.SDK_VERSION = "v3-javascript-" + "3.7.10";
     return UserInQueueService;
 }());
 exports.UserInQueueService = UserInQueueService;
-var TokenValidationResult = /** @class */ (function () {
-    function TokenValidationResult(isValid, errorCode) {
-        this.isValid = isValid;
-        this.errorCode = errorCode;
+var TokenValidationOutput = /** @class */ (function () {
+    function TokenValidationOutput(result) {
+        this._result = result;
     }
-    return TokenValidationResult;
+    Object.defineProperty(TokenValidationOutput.prototype, "result", {
+        get: function () {
+            return this._result;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return TokenValidationOutput;
 }());
 //# sourceMappingURL=UserInQueueService.js.map

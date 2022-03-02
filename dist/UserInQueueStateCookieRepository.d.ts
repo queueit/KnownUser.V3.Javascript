@@ -1,4 +1,5 @@
 import { IConnectorContextProvider } from './ConnectorContextProvider';
+import { SessionValidationResult } from './QueueITHelpers';
 export declare enum CookieValidationResult {
     NotFound = 0,
     Expired = 1,
@@ -37,13 +38,13 @@ export declare class UserInQueueStateCookieRepository {
     static getCookieKey(eventId: string): string;
     store(eventId: string, queueId: string, fixedCookieValidityMinutes: number | null, cookieDomain: string, isCookieHttpOnly: boolean, isCookieSecure: boolean, redirectType: string, hashedIp: string | null, secretKey: string): void;
     private createCookie;
-    getState(eventId: string, cookieValidityMinutes: number, secretKey: string, validateTime: boolean): StateInfo;
+    getState(eventId: string, cookieValidityMinutes: number, secretKey: string, validateTime: boolean): CookieStateInfo;
     private isCookieValid;
     cancelQueueCookie(eventId: string, cookieDomain: string, isCookieHttpOnly: boolean, isCookieSecure: boolean): void;
     reissueQueueCookie(eventId: string, cookieValidityMinutes: number, cookieDomain: string, isCookieHttpOnly: boolean, isCookieSecure: boolean, secretKey: string): void;
     private generateHash;
 }
-export declare class StateInfo {
+export declare class CookieStateInfo {
     queueId: string;
     fixedCookieValidityMinutes: number | null;
     redirectType: string;
@@ -56,5 +57,5 @@ export declare class StateInfo {
     get isFound(): boolean;
     get isBoundToAnotherIp(): boolean;
     isStateExtendable(): boolean;
-    getInvalidCookieReason(): string;
+    get result(): SessionValidationResult;
 }

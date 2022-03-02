@@ -1,6 +1,12 @@
 import { RequestValidationResult, QueueEventConfig, CancelEventConfig } from './Models';
 import { UserInQueueStateCookieRepository } from './UserInQueueStateCookieRepository';
 import { IConnectorContextProvider } from './ConnectorContextProvider';
+export declare enum InvalidTokenErrorCode {
+    Hash = "hash",
+    WaitingRoomId = "eventid",
+    Expired = "timestamp",
+    IpBindingMismatch = "ip"
+}
 export declare class UserInQueueService {
     private contextProvider;
     private userInQueueStateRepository;

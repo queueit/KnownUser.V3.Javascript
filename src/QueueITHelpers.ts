@@ -25,7 +25,7 @@ export class Utils {
 
     static generateSHA256Hash(secretKey: string, stringToHash: string, context?: IConnectorContextProvider): string {
         let cryptoProvider: ICryptoProvider;
-        if(context && context.getCryptoProvider && (cryptoProvider = context.getCryptoProvider())){
+        if (context && context.getCryptoProvider && (cryptoProvider = context.getCryptoProvider())) {
             return cryptoProvider.getSha256Hash(secretKey, stringToHash);
         }
         throw MissingSha256ImplementationException;
@@ -43,7 +43,7 @@ export class Utils {
         return Math.floor(new Date().getTime() / 1000);
     }
 
-    static bin2hex(s: string):string {
+    static bin2hex(s: string): string {
 
         var i: number;
         var l: number;
@@ -221,5 +221,86 @@ export class ConnectorDiagnostics {
         diagnostics.isEnabled = true;
 
         return diagnostics;
+    }
+}
+
+export class InvalidSessionStringBuilder {
+    private details: string[];
+
+    constructor() {
+        this.details = new Array<string>();
+    }
+
+    add(key: string, value: string = null) {
+        if (value) {
+            this.details.push(`${key}:${value}`);
+        } else {
+            this.details.push(key);
+        }
+    }
+
+    toString() {
+        return this.details.join(",");
+    }
+}
+
+export interface QueueSessionValidationResult {
+    errorCode: string;
+
+    getInvalidReason(): string;
+}
+
+export class SessionValidationResult implements QueueSessionValidationResult {
+    constructor(public isValid: boolean,
+                public details: { [name: string]: string } = null,
+                public errorCode: string = null) {
+        this.details = details || {};
+    }
+
+    getInvalidReason(): string {
+        if (this.isValid) {
+            return "";
+        }
+
+        const builder = new InvalidSessionStringBuilder();
+        for (const resultKey of Object.keys(this.details)) {
+            builder.add(resultKey, this.details[resultKey]);
+        }
+        return builder.toString();
+    }
+
+    static newSuccessfulResult(): SessionValidationResult {
+        return new SessionValidationResult(true);
+    }
+
+    static newFailedResult(errorCode: string): SessionValidationResult {
+        return new SessionValidationResult(false, null, errorCode);
+    }
+
+    static setIpBindingValidationDetails(hashedIp: string, clientIp: string, resultToModify: SessionValidationResult = null): SessionValidationResult {
+        resultToModify = resultToModify ?? new SessionValidationResult(false);
+        resultToModify.details["ip"] = "";
+        resultToModify.details['cip'] = Utils.bin2hex(clientIp);
+        resultToModify.details['hip'] = hashedIp;
+        return resultToModify;
+    }
+
+    static setHashMismatchDetails(storedHash: string, resultToModify: SessionValidationResult = null): SessionValidationResult {
+        resultToModify = resultToModify ?? new SessionValidationResult(false);
+        resultToModify.details['hash'] = '';
+        resultToModify.details['h'] = storedHash;
+        return resultToModify;
+    }
+
+    static setExpiredResultDetails(resultToModify: SessionValidationResult = null): SessionValidationResult {
+        resultToModify = resultToModify ?? new SessionValidationResult(false);
+        resultToModify.details['expired'] = '';
+        return resultToModify;
+    }
+
+    static setErrorDetails(resultToModify: SessionValidationResult = null): SessionValidationResult {
+        resultToModify = resultToModify ?? new SessionValidationResult(false);
+        resultToModify.details['error'] = '';
+        return resultToModify;
     }
 }

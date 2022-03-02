@@ -53,3 +53,30 @@ export declare class ConnectorDiagnostics {
     private setStateWithSetupError;
     static verify(customerId: string, secretKey: string, queueitToken: string, context: IConnectorContextProvider): ConnectorDiagnostics;
 }
+export declare class InvalidSessionStringBuilder {
+    private details;
+    constructor();
+    add(key: string, value?: string): void;
+    toString(): string;
+}
+export interface QueueSessionValidationResult {
+    errorCode: string;
+    getInvalidReason(): string;
+}
+export declare class SessionValidationResult implements QueueSessionValidationResult {
+    isValid: boolean;
+    details: {
+        [name: string]: string;
+    };
+    errorCode: string;
+    constructor(isValid: boolean, details?: {
+        [name: string]: string;
+    }, errorCode?: string);
+    getInvalidReason(): string;
+    static newSuccessfulResult(): SessionValidationResult;
+    static newFailedResult(errorCode: string): SessionValidationResult;
+    static setIpBindingValidationDetails(hashedIp: string, clientIp: string, resultToModify?: SessionValidationResult): SessionValidationResult;
+    static setHashMismatchDetails(storedHash: string, resultToModify?: SessionValidationResult): SessionValidationResult;
+    static setExpiredResultDetails(resultToModify?: SessionValidationResult): SessionValidationResult;
+    static setErrorDetails(resultToModify?: SessionValidationResult): SessionValidationResult;
+}

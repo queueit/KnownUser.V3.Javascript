@@ -1,15 +1,27 @@
-import { Utils, QueueUrlParams, QueueParameterHelper, ErrorCode } from './QueueITHelpers';
+import {
+    Utils,
+    QueueUrlParams,
+    QueueParameterHelper,
+    QueueSessionValidationResult, SessionValidationResult
+} from './QueueITHelpers';
 import {
     ActionTypes,
     RequestValidationResult,
     QueueEventConfig,
     CancelEventConfig
 } from './Models';
-import { StateInfo, UserInQueueStateCookieRepository } from './UserInQueueStateCookieRepository';
-import { IConnectorContextProvider } from './ConnectorContextProvider';
+import {UserInQueueStateCookieRepository} from './UserInQueueStateCookieRepository';
+import {IConnectorContextProvider} from './ConnectorContextProvider';
+
+export enum InvalidTokenErrorCode {
+    Hash = "hash",
+    WaitingRoomId = "eventid",
+    Expired = "timestamp",
+    IpBindingMismatch = "ip"
+}
 
 export class UserInQueueService {
-    static readonly SDK_VERSION = "v3-javascript-" + "3.7.8";
+    static readonly SDK_VERSION = "v3-javascript-" + "3.7.10";
 
     constructor(private contextProvider: IConnectorContextProvider, private userInQueueStateRepository: UserInQueueStateCookieRepository) {
     }
@@ -46,19 +58,19 @@ export class UserInQueueService {
         targetUrl: string,
         config: QueueEventConfig,
         qParams: QueueUrlParams,
-        errorCode: string,
-        state: StateInfo)
+        validationResult: QueueSessionValidationResult)
         : RequestValidationResult {
 
+        const errorCode = validationResult.errorCode;
         const queueItTokenParam = qParams ? `&queueittoken=${qParams.queueITToken}` : '';
         let query = this.getQueryString(customerId,
-            config.eventId,
-            config.version,
-            config.culture,
-            config.layoutName,
-            config.actionName,
-            state.getInvalidCookieReason()
-        ) +
+                config.eventId,
+                config.version,
+                config.culture,
+                config.layoutName,
+                config.actionName,
+                validationResult.getInvalidReason()
+            ) +
             queueItTokenParam +
             `&ts=${Utils.getCurrentTime()}` +
             (targetUrl ? `&t=${Utils.encodeUrl(targetUrl)}` : "");
@@ -84,13 +96,13 @@ export class UserInQueueService {
         const enqueueToken = this.contextProvider.getEnqueueTokenProvider
             && this.contextProvider.getEnqueueTokenProvider()?.getEnqueueToken(config.eventId);
         let query = this.getQueryString(customerId,
-            config.eventId,
-            config.version,
-            config.culture,
-            config.layoutName,
-            config.actionName,
-            null,
-            enqueueToken) +
+                config.eventId,
+                config.version,
+                config.culture,
+                config.layoutName,
+                config.actionName,
+                null,
+                enqueueToken) +
             (targetUrl ? "&t=" + Utils.encodeUrl(targetUrl) : "");
 
         const redirectUrl = this.generateRedirectUrl(config.queueDomain, "", query);
@@ -185,16 +197,20 @@ export class UserInQueueService {
         let isTokenValid = false;
 
         if (queueTokenParams) {
-            const tokenValidationResult = this.validateToken(config, queueTokenParams, secretKey);
-            isTokenValid = tokenValidationResult.isValid;
+            const validationOutput = this.validateToken(config, queueTokenParams, secretKey);
+            isTokenValid = validationOutput.result.isValid;
 
             if (isTokenValid) {
                 requestValidationResult = this.getValidTokenResult(config, queueTokenParams, secretKey);
             } else {
-                requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueTokenParams, tokenValidationResult.errorCode, state);
+                requestValidationResult = this.getErrorResult(customerId,
+                    targetUrl,
+                    config,
+                    queueTokenParams,
+                    validationOutput.result);
             }
         } else if (state.isBoundToAnotherIp) {
-            requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueTokenParams, ErrorCode.CookieSessionState, state);
+            requestValidationResult = this.getErrorResult(customerId, targetUrl, config, queueTokenParams, state.result);
         } else {
             requestValidationResult = this.getQueueResult(targetUrl, config, customerId);
         }
@@ -226,11 +242,11 @@ export class UserInQueueService {
                 config.isCookieSecure);
 
             const query = this.getQueryString(customerId,
-                config.eventId,
-                config.version,
-                null,
-                null,
-                config.actionName) +
+                    config.eventId,
+                    config.version,
+                    null,
+                    null,
+                    config.actionName) +
                 (targetUrl ? "&r=" + Utils.encodeUrl(targetUrl) : "");
 
             let uriPath = `cancel/${customerId}/${config.eventId}`;
@@ -281,34 +297,41 @@ export class UserInQueueService {
     private validateToken(
         config: QueueEventConfig,
         queueParams: QueueUrlParams,
-        secretKey: string): TokenValidationResult {
+        secretKey: string): TokenValidationOutput {
         const calculatedHash = Utils.generateSHA256Hash(secretKey, queueParams.queueITTokenWithoutHash, this.contextProvider);
 
         if (calculatedHash !== queueParams.hashCode)
-            return new TokenValidationResult(false, "hash");
+            return new TokenValidationOutput(SessionValidationResult.newFailedResult(InvalidTokenErrorCode.Hash));
 
         if (queueParams.eventId !== config.eventId)
-            return new TokenValidationResult(false, "eventid");
+            return new TokenValidationOutput(SessionValidationResult.newFailedResult(InvalidTokenErrorCode.WaitingRoomId));
 
         if (queueParams.timeStamp < Utils.getCurrentTime())
-            return new TokenValidationResult(false, "timestamp");
+            return new TokenValidationOutput(SessionValidationResult.newFailedResult(InvalidTokenErrorCode.Expired));
 
         const clientIp = this.contextProvider.getHttpRequest().getUserHostAddress();
         if (queueParams.hashedIp && clientIp) {
-            const hashedIp = Utils.generateSHA256Hash(secretKey, clientIp, this.contextProvider);
-            if (hashedIp !== queueParams.hashedIp) {
-                return new TokenValidationResult(false, "ip");
+            const expectedIpHash = Utils.generateSHA256Hash(secretKey, clientIp, this.contextProvider);
+            if (expectedIpHash !== queueParams.hashedIp) {
+                const newResult = SessionValidationResult.newFailedResult(InvalidTokenErrorCode.IpBindingMismatch);
+                SessionValidationResult.setIpBindingValidationDetails(queueParams.hashedIp, clientIp, newResult)
+                return new TokenValidationOutput(newResult);
             }
         }
 
-        return new TokenValidationResult(true, null);
+        return new TokenValidationOutput(SessionValidationResult.newSuccessfulResult());
     }
-
 }
 
-class TokenValidationResult {
+class TokenValidationOutput {
+    private readonly _result;
+
     constructor(
-        public isValid: boolean,
-        public errorCode: string) {
+        result: SessionValidationResult) {
+        this._result = result;
+    }
+
+    get result(): SessionValidationResult {
+        return this._result;
     }
 }

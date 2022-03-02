@@ -1,5 +1,10 @@
 import {IConnectorContextProvider} from './ConnectorContextProvider';
-import {CookieHelper, Utils} from './QueueITHelpers';
+import {
+    CookieHelper,
+    ErrorCode,
+    SessionValidationResult,
+    Utils
+} from './QueueITHelpers';
 
 export enum CookieValidationResult {
     NotFound,
@@ -149,7 +154,7 @@ export class UserInQueueStateCookieRepository {
             isCookieSecure);
     }
 
-    public getState(eventId: string, cookieValidityMinutes: number, secretKey: string, validateTime: boolean): StateInfo {
+    public getState(eventId: string, cookieValidityMinutes: number, secretKey: string, validateTime: boolean): CookieStateInfo {
         let qitAcceptedCookie: QueueItAcceptedCookie = null;
         const clientIp = this.contextProvider.getHttpRequest().getUserHostAddress();
         try {
@@ -157,15 +162,15 @@ export class UserInQueueStateCookieRepository {
             const cookie = this.contextProvider.getHttpRequest().getCookieValue(cookieKey);
 
             if (!cookie)
-                return new StateInfo("", null, "", null, CookieValidationResult.NotFound, null, clientIp);
+                return new CookieStateInfo("", null, "", null, CookieValidationResult.NotFound, null, clientIp);
 
             qitAcceptedCookie = QueueItAcceptedCookie.fromCookieHeader(cookie);
             const cookieValidationResult = this.isCookieValid(secretKey, qitAcceptedCookie, eventId, cookieValidityMinutes, validateTime);
             if (cookieValidationResult != CookieValidationResult.Valid) {
-                return new StateInfo("", null, "", qitAcceptedCookie.hashedIp, cookieValidationResult, qitAcceptedCookie, clientIp);
+                return new CookieStateInfo("", null, "", qitAcceptedCookie.hashedIp, cookieValidationResult, qitAcceptedCookie, clientIp);
             }
 
-            return new StateInfo(
+            return new CookieStateInfo(
                 qitAcceptedCookie.queueId,
                 qitAcceptedCookie.fixedCookieValidityMinutes
                     ? parseInt(qitAcceptedCookie.fixedCookieValidityMinutes)
@@ -176,7 +181,7 @@ export class UserInQueueStateCookieRepository {
                 qitAcceptedCookie,
                 clientIp);
         } catch (ex) {
-            return new StateInfo("", null, "", qitAcceptedCookie?.hashedIp, CookieValidationResult.Error, qitAcceptedCookie, clientIp);
+            return new CookieStateInfo("", null, "", qitAcceptedCookie?.hashedIp, CookieValidationResult.Error, qitAcceptedCookie, clientIp);
         }
     }
 
@@ -286,7 +291,7 @@ export class UserInQueueStateCookieRepository {
     }
 }
 
-export class StateInfo {
+export class CookieStateInfo {
     constructor(public queueId: string,
                 public fixedCookieValidityMinutes: number | null,
                 public redirectType: string,
@@ -312,42 +317,39 @@ export class StateInfo {
         return this.isValid && !this.fixedCookieValidityMinutes;
     }
 
-    getInvalidCookieReason(): string {
+    get result(): SessionValidationResult {
         if (this.isValid) {
-            return "";
+            return SessionValidationResult.newSuccessfulResult();
         }
 
-        const details = new Array<string>();
+        const result = SessionValidationResult.newFailedResult(ErrorCode.CookieSessionState);
         switch (this.cookieValidationResult) {
             case CookieValidationResult.HashMismatch:
-                details.push("hash");
-                details.push(`h:${this.cookie.storedHash}`);
+                SessionValidationResult.setHashMismatchDetails(this.cookie.storedHash, result);
                 break;
             case CookieValidationResult.Expired:
-                details.push("expired");
+                SessionValidationResult.setExpiredResultDetails(result);
                 break;
             case CookieValidationResult.Error:
-                details.push("error");
+                SessionValidationResult.setErrorDetails();
                 break;
             case CookieValidationResult.NotFound:
                 break;
             case CookieValidationResult.IpBindingMismatch:
-                details.push("ip");
-                details.push(`hip:${this.cookie.hashedIp}`);
-                details.push(`cip:${Utils.bin2hex(this.clientIp)}`);
+                SessionValidationResult.setIpBindingValidationDetails(this.cookie.hashedIp, this.clientIp, result);
                 break;
         }
 
         if (this.isFound) {
             if (this.redirectType) {
-                details.push(`r:${this.redirectType}`);
+                result.details['r'] = this.redirectType;
             }
             if (this.queueId) {
-                details.push(`q:${this.queueId}`);
+                result.details['q'] = this.queueId;
             }
-            details.push(`st:${Date.now()}`);
+            result.details['st'] = Date.now().toString();
         }
 
-        return details.join(",");
+        return result;
     }
 }
