@@ -1,6 +1,6 @@
 {
   "name": "queueit-knownuser",
-  "version": "3.7.11",
+  "version": "3.7.12",
   "description": "SDK to integrate Queue-it into a javascript based server side application.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,7 +10,7 @@
     "clean": "npm run clean:dist",
     "clean:dist": "rm -rf ./dist/*",
     "build": "npm run clean && tsc && npm run browserify",
-    "browserify": "browserify . -s QueueIT.KnownUserV3.SDK -o dist/queueit.knownuserv3.browserified.js",
+    "browserify": "browserify . -s QueueIT.KnownUserV3.SDK -o dist/queueit.knownuserv3.browserify.js",
     "test": "mocha --recursive",
     "buildtest": "npm run build && npm run test",
     "test:watch": "nodemon --watch test -x \"npm run test\""
