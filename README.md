@@ -1,4 +1,7 @@
 # KnownUser.V3.Javascript
+
+**This is not the most recent version. In order to obtain access to the most recent version, please contact your local Queue-it representative or Queue-it Support**
+
 Before getting started please read the [documentation](https://github.com/queueit/Documentation/tree/main/serverside-connectors) to get acquainted with server-side connectors.
 
 The connector was developed with TypeScript and verified using Nodejs v.8.12 and Express v.4.16.
